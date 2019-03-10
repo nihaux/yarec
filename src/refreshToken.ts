@@ -2,21 +2,24 @@ import { getBasicAuthHeader } from './utils/getBasicAuthHeader';
 import { makePost } from './utils/makePost';
 import { MissingRefreshTokenError } from './errors';
 import { validateTokenResponse } from './utils/validateTokenResponse';
-import { parseTokenResponse } from './utils/parseTokenResponse';
 
 export type RefreshTokenArgs = {
-  readonly refreshToken: string;
-  readonly clientId: string;
-  readonly clientSecret?: string;
+  readonly refresh_token: string;
+  readonly client_id: string;
+  readonly client_secret?: string;
 };
 
-export const refreshToken = async ({ refreshToken, clientId, clientSecret }: RefreshTokenArgs) => {
+export const refreshToken = async ({
+  refresh_token,
+  client_id,
+  client_secret,
+}: RefreshTokenArgs) => {
   const url = 'https://www.reddit.com/api/v1/access_token';
   const body = {
     grant_type: 'refresh_token',
-    refresh_token: refreshToken,
+    refresh_token,
   };
-  const extraHeaders = getBasicAuthHeader({ clientSecret, clientId });
+  const extraHeaders = getBasicAuthHeader({ client_secret, client_id });
 
   const response = await makePost({ url, body, extraHeaders });
 
@@ -28,5 +31,8 @@ export const refreshToken = async ({ refreshToken, clientId, clientSecret }: Ref
 
   validateTokenResponse({ jsonResponse });
 
-  return parseTokenResponse(jsonResponse);
+  return {
+    ...jsonResponse,
+    scope: jsonResponse.scope.split(' '),
+  };
 };

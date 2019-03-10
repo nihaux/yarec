@@ -11,12 +11,12 @@ import { encodeBodyPost } from './utils/encodeBodyPost';
 
 const fetch = (global as GlobalWithFetchMock).fetch;
 
-const clientId = 'toto';
-const clientSecret = 'totosecret';
-const redirectUri = 'http://toto.website/callback';
+const client_id = 'toto';
+const client_secret = 'totosecret';
+const redirect_uri = 'http://toto.website/callback';
 const code = 'asdfasdfjhsdkfhsdf';
 
-const accessParams = { clientId, clientSecret, redirectUri, code };
+const accessParams = { client_id, client_secret, redirect_uri, code };
 
 const validResponse = {
   access_token: 'asdf',
@@ -54,9 +54,9 @@ describe('getAccessToken', () => {
   it('should ask for client_credential grant_type when no code and client secret', async () => {
     fetch.mockResponseOnce(JSON.stringify(validResponse));
     const params = {
-      clientId: 'toto',
-      clientSecret: 'mangeDesFrites',
-      redirectUri: 'myapp://callback',
+      client_id: 'toto',
+      client_secret: 'mangeDesFrites',
+      redirect_uri: 'myapp://callback',
     };
     await getToken(params);
 
@@ -68,11 +68,14 @@ describe('getAccessToken', () => {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          ...getBasicAuthHeader({ clientId: params.clientId, clientSecret: params.clientSecret }),
+          ...getBasicAuthHeader({
+            client_id: params.client_id,
+            client_secret: params.client_secret,
+          }),
         },
         body: encodeBodyPost({
           grant_type: 'client_credentials',
-          redirect_uri: params.redirectUri,
+          redirect_uri: params.redirect_uri,
         }),
       },
     ];
@@ -83,8 +86,8 @@ describe('getAccessToken', () => {
   it('should ask for https://oauth.reddit.com/grants/installed_client grant_type when no code and no client secret', async () => {
     fetch.mockResponseOnce(JSON.stringify(validResponse));
     const params = {
-      clientId: 'toto',
-      redirectUri: 'myapp://callback',
+      client_id: 'toto',
+      redirect_uri: 'myapp://callback',
     };
     await getToken(params);
 
@@ -96,12 +99,12 @@ describe('getAccessToken', () => {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          ...getBasicAuthHeader({ clientId: params.clientId }),
+          ...getBasicAuthHeader({ client_id: params.client_id }),
         },
         body: encodeBodyPost({
           grant_type: 'https://oauth.reddit.com/grants/installed_client',
           device_id: 'DO_NOT_TRACK_THIS_DEVICE',
-          redirect_uri: params.redirectUri,
+          redirect_uri: params.redirect_uri,
         }),
       },
     ];
@@ -113,10 +116,8 @@ describe('getAccessToken', () => {
     fetch.mockResponseOnce(JSON.stringify(validResponse));
     const response = await getToken(accessParams);
     expect(response).toEqual({
-      accessToken: validResponse.access_token,
-      expiresIn: validResponse.expires_in,
+      ...validResponse,
       scope: validResponse.scope.split(' '),
-      tokenType: validResponse.token_type,
     });
   });
   it('should throw if reddit returns 401', async () => {

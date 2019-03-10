@@ -1,5 +1,5 @@
-import { getAuthorizationUrl } from '../src/authorization';
-import { AuthorizationDurationEnum, ScopeEnum } from '../src/types';
+import { getAuthorizationUrl } from './authorization';
+import { AuthorizationDurationEnum, ScopeEnum } from './types';
 
 describe('authorization', () => {
   describe('getAuthorizationUrl', () => {

@@ -3,12 +3,11 @@ import { ScopeEnum } from './types';
 import { makePost } from './utils/makePost';
 import { getBasicAuthHeader } from './utils/getBasicAuthHeader';
 import { validateTokenResponse } from './utils/validateTokenResponse';
-import { parseTokenResponse } from './utils/parseTokenResponse';
 
 export type CommonGetAccessTokenArgs = {
-  readonly redirectUri: string;
-  readonly clientId: string;
-  readonly clientSecret?: string;
+  readonly redirect_uri: string;
+  readonly client_id: string;
+  readonly client_secret?: string;
 };
 
 export type WithCodeGetAccessTokenArgs = { readonly code: string } & CommonGetAccessTokenArgs;
@@ -16,11 +15,11 @@ export type AppOnlyGetAccessTokenArgs = CommonGetAccessTokenArgs;
 export type GetAccessTokenArgs = WithCodeGetAccessTokenArgs | AppOnlyGetAccessTokenArgs;
 
 export type GetAccessTokenResponse = {
-  readonly accessToken: string;
-  readonly tokenType: string;
-  readonly expiresIn: number;
+  readonly access_token: string;
+  readonly token_type: string;
+  readonly expires_in: number;
   readonly scope: ReadonlyArray<ScopeEnum>;
-  readonly refreshToken?: string;
+  readonly refresh_token?: string;
 };
 
 const isWithCode = (params: GetAccessTokenArgs): params is WithCodeGetAccessTokenArgs => {
@@ -28,22 +27,22 @@ const isWithCode = (params: GetAccessTokenArgs): params is WithCodeGetAccessToke
 };
 
 export const getToken = async (params: GetAccessTokenArgs): Promise<GetAccessTokenResponse> => {
-  const { clientId, clientSecret, redirectUri } = params;
+  const { client_id, client_secret, redirect_uri } = params;
   const url = 'https://www.reddit.com/api/v1/access_token';
-  const extraHeaders = getBasicAuthHeader({ clientId, clientSecret });
+  const extraHeaders = getBasicAuthHeader({ client_id, client_secret });
 
   const response = await makePost({
     url,
     body: {
       ...(isWithCode(params) ? { grant_type: 'authorization_code', code: params.code } : {}),
-      ...(!isWithCode(params) && clientSecret ? { grant_type: 'client_credentials' } : {}),
-      ...(!isWithCode(params) && !clientSecret
+      ...(!isWithCode(params) && client_secret ? { grant_type: 'client_credentials' } : {}),
+      ...(!isWithCode(params) && !client_secret
         ? {
             grant_type: 'https://oauth.reddit.com/grants/installed_client',
             device_id: 'DO_NOT_TRACK_THIS_DEVICE',
           }
         : {}),
-      redirect_uri: redirectUri,
+      redirect_uri,
     },
     extraHeaders,
   });
@@ -59,5 +58,8 @@ export const getToken = async (params: GetAccessTokenArgs): Promise<GetAccessTok
 
   validateTokenResponse({ jsonResponse });
 
-  return parseTokenResponse(jsonResponse);
+  return {
+    ...jsonResponse,
+    scope: jsonResponse.scope.split(' '),
+  };
 };

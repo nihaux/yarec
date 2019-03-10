@@ -7,10 +7,10 @@ import { encodeBodyPost } from './utils/encodeBodyPost';
 const fetch = (global as GlobalWithFetchMock).fetch;
 
 const refreshParams = {
-  clientId: 'toto',
-  clientSecret: 'traverseEnDehorsDesClous',
-  redirectUri: 'appli://callback',
-  refreshToken: 'qwersdfasdfdsghjksafjd',
+  client_id: 'toto',
+  client_secret: 'traverseEnDehorsDesClous',
+  redirect_uri: 'appli://callback',
+  refresh_token: 'qwersdfasdfdsghjksafjd',
 };
 
 const validResponse = {
@@ -33,13 +33,13 @@ describe('refreshToken', () => {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           ...getBasicAuthHeader({
-            clientId: refreshParams.clientId,
-            clientSecret: refreshParams.clientSecret,
+            client_id: refreshParams.client_id,
+            client_secret: refreshParams.client_secret,
           }),
         },
         body: encodeBodyPost({
           grant_type: 'refresh_token',
-          refresh_token: refreshParams.refreshToken,
+          refresh_token: refreshParams.refresh_token,
         }),
       },
     ];
@@ -51,10 +51,8 @@ describe('refreshToken', () => {
     fetch.mockResponseOnce(JSON.stringify(validResponse));
     const response = await refreshToken(refreshParams);
     expect(response).toEqual({
-      accessToken: validResponse.access_token,
-      expiresIn: validResponse.expires_in,
+      ...validResponse,
       scope: validResponse.scope.split(' '),
-      tokenType: validResponse.token_type,
     });
   });
   it('should throw if refresh token missing from request', async () => {
