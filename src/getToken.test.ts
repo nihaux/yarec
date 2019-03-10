@@ -6,6 +6,8 @@ import {
   RedditBackendError,
   RedditIncompleteResponseError,
 } from './errors';
+import { getBasicAuthHeader } from './utils/getBasicAuthHeader';
+import { encodeBodyPost } from './utils/encodeBodyPost';
 
 const fetch = (global as GlobalWithFetchMock).fetch;
 
@@ -24,6 +26,9 @@ const validResponse = {
 };
 
 describe('getAccessToken', () => {
+  beforeEach(() => {
+    fetch.resetMocks();
+  });
   it('should make a POST request to the token endpoint', async () => {
     fetch.mockResponseOnce(JSON.stringify(validResponse));
     await getToken(accessParams);
@@ -40,6 +45,64 @@ describe('getAccessToken', () => {
         },
         body:
           'grant_type=authorization_code&code=asdfasdfjhsdkfhsdf&redirect_uri=http%3A%2F%2Ftoto.website%2Fcallback',
+      },
+    ];
+
+    expect(fetch.mock.calls.length).toEqual(1);
+    expect(fetch.mock.calls[0]).toEqual(expectedCall);
+  });
+  it('should ask for client_credential grant_type when no code and client secret', async () => {
+    fetch.mockResponseOnce(JSON.stringify(validResponse));
+    const params = {
+      clientId: 'toto',
+      clientSecret: 'mangeDesFrites',
+      redirectUri: 'myapp://callback',
+    };
+    await getToken(params);
+
+    const expectedCall: ReadonlyArray<any> = [
+      'https://www.reddit.com/api/v1/access_token',
+      {
+        method: 'POST',
+        mode: 'cors',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          ...getBasicAuthHeader({ clientId: params.clientId, clientSecret: params.clientSecret }),
+        },
+        body: encodeBodyPost({
+          grant_type: 'client_credentials',
+          redirect_uri: params.redirectUri,
+        }),
+      },
+    ];
+
+    expect(fetch.mock.calls.length).toEqual(1);
+    expect(fetch.mock.calls[0]).toEqual(expectedCall);
+  });
+  it('should ask for https://oauth.reddit.com/grants/installed_client grant_type when no code and no client secret', async () => {
+    fetch.mockResponseOnce(JSON.stringify(validResponse));
+    const params = {
+      clientId: 'toto',
+      redirectUri: 'myapp://callback',
+    };
+    await getToken(params);
+
+    const expectedCall: ReadonlyArray<any> = [
+      'https://www.reddit.com/api/v1/access_token',
+      {
+        method: 'POST',
+        mode: 'cors',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          ...getBasicAuthHeader({ clientId: params.clientId }),
+        },
+        body: encodeBodyPost({
+          grant_type: 'https://oauth.reddit.com/grants/installed_client',
+          device_id: 'DO_NOT_TRACK_THIS_DEVICE',
+          redirect_uri: params.redirectUri,
+        }),
       },
     ];
 

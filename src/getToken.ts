@@ -34,15 +34,17 @@ export const getToken = async (params: GetAccessTokenArgs): Promise<GetAccessTok
 
   const response = await makePost({
     url,
-    body: isWithCode(params)
-      ? { grant_type: 'authorization_code', code: params.code, redirect_uri: redirectUri }
-      : {
-          grant_type: clientSecret
-            ? 'client_credentials'
-            : 'https://oauth.reddit.com/grants/installed_client',
-          device_id: 'DO_NOT_TRACK_THIS_DEVICE',
-          redirect_uri: redirectUri,
-        },
+    body: {
+      ...(isWithCode(params) ? { grant_type: 'authorization_code', code: params.code } : {}),
+      ...(!isWithCode(params) && clientSecret ? { grant_type: 'client_credentials' } : {}),
+      ...(!isWithCode(params) && !clientSecret
+        ? {
+            grant_type: 'https://oauth.reddit.com/grants/installed_client',
+            device_id: 'DO_NOT_TRACK_THIS_DEVICE',
+          }
+        : {}),
+      redirect_uri: redirectUri,
+    },
     extraHeaders,
   });
 
