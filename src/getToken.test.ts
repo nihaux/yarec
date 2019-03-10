@@ -1,11 +1,11 @@
 import { GlobalWithFetchMock } from 'jest-fetch-mock';
-import { getToken } from '../src/getToken';
+import { getToken } from './getToken';
 import {
   BadAuthorizationCodeError,
   BadClientCredentialsError,
   RedditBackendError,
   RedditIncompleteResponseError,
-} from '../src/errors';
+} from './errors';
 
 const fetch = (global as GlobalWithFetchMock).fetch;
 
@@ -45,6 +45,16 @@ describe('getAccessToken', () => {
 
     expect(fetch.mock.calls.length).toEqual(1);
     expect(fetch.mock.calls[0]).toEqual(expectedCall);
+  });
+  it('should return a formatted response', async () => {
+    fetch.mockResponseOnce(JSON.stringify(validResponse));
+    const response = await getToken(accessParams);
+    expect(response).toEqual({
+      accessToken: validResponse.access_token,
+      expiresIn: validResponse.expires_in,
+      scope: validResponse.scope.split(' '),
+      tokenType: validResponse.token_type,
+    });
   });
   it('should throw if reddit returns 401', async () => {
     fetch.mockResponseOnce('whatever', { status: 401 });

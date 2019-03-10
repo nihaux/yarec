@@ -1,12 +1,9 @@
-import 'cross-fetch/polyfill';
-import { Base64 } from 'js-base64';
-import {
-  BadClientCredentialsError,
-  BadAuthorizationCodeError,
-  RedditBackendError,
-  RedditIncompleteResponseError,
-} from './errors';
+import { BadAuthorizationCodeError } from './errors';
 import { ScopeEnum } from './types';
+import { makePost } from './utils/makePost';
+import { getBasicAuthHeader } from './utils/getBasicAuthHeader';
+import { validateTokenResponse } from './utils/validateTokenResponse';
+import { parseTokenResponse } from './utils/parseTokenResponse';
 
 export type GetAccessTokenArgs = {
   readonly code: string;
@@ -29,36 +26,15 @@ export const getToken = async ({
   clientId,
   clientSecret,
 }: GetAccessTokenArgs): Promise<GetAccessTokenResponse> => {
-  const bodyObject = {
+  const url = 'https://www.reddit.com/api/v1/access_token';
+  const extraHeaders = getBasicAuthHeader({ clientId, clientSecret });
+  const body = {
     grant_type: 'authorization_code',
     code,
     redirect_uri: redirectUri,
   };
-  const encodedBody = Object.entries(bodyObject)
-    .map(([key, value]) => {
-      return encodeURIComponent(key) + '=' + encodeURIComponent(value);
-    })
-    .join('&');
 
-  const baseUrl = 'https://www.reddit.com/api/v1/access_token';
-  const response = await fetch(baseUrl, {
-    method: 'POST',
-    mode: 'cors',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      Authorization: `Basic ${Base64.encode(clientId + ':' + clientSecret || '')}`,
-    },
-    body: encodedBody,
-  });
-
-  if (response.status === 401) {
-    throw new BadClientCredentialsError();
-  }
-
-  if (response.status >= 500) {
-    throw new RedditBackendError();
-  }
+  const response = await makePost({ url, body, extraHeaders });
 
   const jsonResponse = await response.json();
 
@@ -69,24 +45,7 @@ export const getToken = async ({
     throw new Error(jsonResponse.error);
   }
 
-  const mandatoryValues: ReadonlyArray<string> = [
-    'access_token',
-    'token_type',
-    'expires_in',
-    'scope',
-  ];
-  const jsonResponseKeys = Object.keys(jsonResponse);
-  const notInResponse = mandatoryValues.filter(value => !jsonResponseKeys.includes(value));
+  validateTokenResponse({ jsonResponse });
 
-  if (notInResponse.length > 0) {
-    throw new RedditIncompleteResponseError(notInResponse);
-  }
-
-  return {
-    accessToken: jsonResponse.access_token,
-    expiresIn: jsonResponse.expires_in,
-    tokenType: jsonResponse.token_type,
-    scope: jsonResponse.scope.split(' '),
-    refreshToken: jsonResponse.refresh_token,
-  };
+  return parseTokenResponse(jsonResponse);
 };

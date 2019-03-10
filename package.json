@@ -60,7 +60,8 @@
     ],
     "coveragePathIgnorePatterns": [
       "/node_modules/",
-      "/test/"
+      "/test/",
+      "/errors/"
     ],
     "coverageThreshold": {
       "global": {
@@ -71,7 +72,7 @@
       }
     },
     "collectCoverageFrom": [
-      "src/*.{js,ts}"
+      "src/**/*.{js,ts}"
     ],
     "automock": false,
     "setupFiles": [
