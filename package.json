@@ -23,7 +23,8 @@
     "prebuild": "rimraf dist",
     "build": "tsc --module commonjs && rollup -c rollup.config.ts && typedoc --out docs --target es6 --theme minimal --mode file src",
     "start": "rollup -c rollup.config.ts -w",
-    "test": "jest --coverage",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
     "test:watch": "jest --coverage --watch",
     "test:prod": "npm run lint && npm run test -- --no-cache",
     "deploy-docs": "ts-node tools/gh-pages-publish",
@@ -32,7 +33,8 @@
     "semantic-release": "semantic-release",
     "semantic-release-prepare": "ts-node tools/semantic-release-prepare",
     "precommit": "lint-staged",
-    "travis-deploy-once": "travis-deploy-once"
+    "travis-deploy-once": "travis-deploy-once",
+    "authorizr": "ts-node -O '{\"module\": \"commonjs\"}' ./authorizr/index.ts"
   },
   "lint-staged": {
     "{src,test}/**/*.ts": [
@@ -70,6 +72,10 @@
     },
     "collectCoverageFrom": [
       "src/*.{js,ts}"
+    ],
+    "automock": false,
+    "setupFiles": [
+      "./setupJest.ts"
     ]
   },
   "prettier": {
@@ -86,7 +92,8 @@
     "@commitlint/cli": "^7.1.2",
     "@commitlint/config-conventional": "^7.1.2",
     "@types/jest": "^23.3.2",
-    "@types/node": "^10.11.0",
+    "@types/js-base64": "^2.3.1",
+    "@types/node": "^11.11.0",
     "colors": "^1.3.2",
     "commitizen": "^3.0.0",
     "coveralls": "^3.0.2",
@@ -95,6 +102,7 @@
     "husky": "^1.0.1",
     "jest": "^23.6.0",
     "jest-config": "^23.6.0",
+    "jest-fetch-mock": "^2.1.1",
     "lint-staged": "^8.0.0",
     "lodash.camelcase": "^4.3.0",
     "prettier": "^1.14.3",
@@ -111,7 +119,7 @@
     "shelljs": "^0.8.3",
     "travis-deploy-once": "^5.0.9",
     "ts-jest": "^23.10.2",
-    "ts-node": "^7.0.1",
+    "ts-node": "^8.0.3",
     "tslint": "^5.11.0",
     "tslint-config-prettier": "^1.15.0",
     "tslint-config-standard": "^8.0.1",
@@ -120,6 +128,7 @@
     "typescript": "^3.0.3"
   },
   "dependencies": {
-    "cross-fetch": "^3.0.1"
+    "cross-fetch": "^3.0.1",
+    "js-base64": "^2.5.1"
   }
 }

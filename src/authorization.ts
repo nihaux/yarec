@@ -1,46 +1,12 @@
-export enum AuthorizationDurationEnum {
-  temporary = 'temporary',
-  permanent = 'permanent',
-}
-
-export enum ScopeEnum {
-  account = 'account',
-  creddits = 'creddits',
-  edit = 'edit',
-  flair = 'flair',
-  history = 'history',
-  identity = 'identity',
-  livemanage = 'livemanage',
-  modconfig = 'modconfig',
-  modcontributors = 'modcontributors',
-  modflair = 'modflair',
-  modlog = 'modlog',
-  modmail = 'modmail',
-  modothers = 'modothers',
-  modposts = 'modposts',
-  modself = 'modself',
-  modwiki = 'modwiki',
-  modtraffic = 'modtraffic',
-  mysubreddits = 'mysubreddits',
-  privatemessages = 'privatemessages',
-  read = 'read',
-  report = 'report',
-  save = 'save',
-  structuredstyles = 'structuredstyles',
-  submit = 'submit',
-  subscribe = 'subscribe',
-  vote = 'vote',
-  wikiedit = 'wikiedit',
-  wikiread = 'wikiread',
-}
+import { AuthorizationDurationEnum, ScopeEnum } from './types';
 
 export type authorizationConfig = {
-  clientId: string;
-  redirectUri: string;
-  duration: AuthorizationDurationEnum;
-  scopes: ScopeEnum[];
-  state?: string;
-  mobile?: boolean;
+  readonly clientId: string;
+  readonly redirectUri: string;
+  readonly duration: AuthorizationDurationEnum;
+  readonly scopes: ReadonlyArray<ScopeEnum>;
+  readonly state?: string;
+  readonly mobile?: boolean;
 };
 
 export const getAuthorizationUrl = ({
