@@ -3,9 +3,9 @@
   "version": "0.0.0",
   "description": "",
   "keywords": [],
-  "main": "dist/reddit-client.umd.js",
-  "module": "dist/reddit-client.es5.js",
-  "typings": "dist/types/reddit-client.d.ts",
+  "main": "dist/index.umd.js",
+  "module": "dist/index.es5.js",
+  "typings": "dist/types/index.d.ts",
   "files": [
     "dist"
   ],

@@ -1,4 +1,4 @@
-import { getAuthorizationUrl } from './authorization';
+import { getAuthorizationUrl } from './getAuthorizationUrl';
 import { AuthorizationDurationEnum, ScopeEnum } from './types';
 
 describe('authorization', () => {

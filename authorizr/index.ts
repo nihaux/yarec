@@ -1,5 +1,5 @@
 import * as http from 'http';
-import { getAuthorizationUrl } from '../src/authorization';
+import { getAuthorizationUrl } from '../src/getAuthorizationUrl';
 import { ScopeEnum, AuthorizationDurationEnum } from '../src/types';
 import { getToken } from '../src/getToken';
 
