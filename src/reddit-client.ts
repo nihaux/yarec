@@ -3,6 +3,7 @@ import { getToken } from './getToken';
 import { refreshToken } from './refreshToken';
 import { encodeBodyPost } from './utils/encodeBodyPost';
 import { Link, Listing } from './types';
+import { timeout } from './utils/timeout';
 
 export enum SortLinksEnum {
   new = 'new',
@@ -34,6 +35,7 @@ export default class RedditClient implements RedditClientInterface {
   private access_token?: string;
   private ratelimit_remaining?: number;
   private ratelimit_reset?: number;
+  private inProgress: number;
 
   constructor({
     client_id,
@@ -47,6 +49,7 @@ export default class RedditClient implements RedditClientInterface {
     this.redirect_uri = redirect_uri;
     this.client_secret = client_secret;
     this.refresh_token = refresh_token;
+    this.inProgress = 0;
   }
 
   private fetchAccessToken = async () => {
@@ -88,7 +91,19 @@ export default class RedditClient implements RedditClientInterface {
     }
   };
 
-  public get = async ({
+  private maybeWait = async () => {
+    if (this.ratelimit_remaining === undefined || this.ratelimit_reset === undefined) {
+      return;
+    }
+
+    const realRemaining = this.ratelimit_remaining - this.inProgress;
+    if (realRemaining >= 5) {
+      return;
+    }
+    await timeout(this.ratelimit_reset * 1000);
+  };
+
+  private get = async ({
     path,
     query,
   }: {
@@ -102,11 +117,14 @@ export default class RedditClient implements RedditClientInterface {
     if (query) {
       urlWithQuery = `${API_ENDPOINT}${path}?${encodeBodyPost(query)}`;
     }
+    await this.maybeWait();
+    this.inProgress++;
     const response = await fetch(urlWithQuery, {
       method: 'GET',
       ...this.getFetchOptions(),
     });
     this.extractRateLimitFromHeaders(response.headers);
+    this.inProgress--;
     return response.json();
   };
 
