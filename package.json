@@ -1,5 +1,5 @@
 {
-  "name": "reddit-client",
+  "name": "yarec",
   "version": "0.0.0",
   "description": "",
   "keywords": [],
@@ -9,7 +9,7 @@
   "files": [
     "dist"
   ],
-  "author": "Nihau <nhauseux@prismamedia.com>",
+  "author": "Nihau <nicolas.hauseux@gmail.com>",
   "repository": {
     "type": "git",
     "url": ""
@@ -34,7 +34,8 @@
     "semantic-release-prepare": "ts-node tools/semantic-release-prepare",
     "precommit": "lint-staged",
     "travis-deploy-once": "travis-deploy-once",
-    "authorizr": "ts-node -O '{\"module\": \"commonjs\"}' ./authorizr/index.ts"
+    "authorizr": "ts-node -O '{\"module\": \"commonjs\"}' ./authorizr/index.ts",
+    "t": "ts-node -O '{\"module\": \"commonjs\"}' ./test.ts"
   },
   "lint-staged": {
     "{src,test}/**/*.ts": [
