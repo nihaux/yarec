@@ -17,7 +17,7 @@ export enum SortLinksEnum {
 interface RedditClientInterface {}
 
 type RedditClientOptions = {
-  readonly retry: number;
+  readonly maxRetry: number;
 };
 
 type RedditClientConstructorArgs = {
@@ -26,6 +26,8 @@ type RedditClientConstructorArgs = {
   readonly user_agent: string;
   readonly client_secret?: string;
   readonly refresh_token?: string;
+  // mostly for debugging purpose
+  readonly access_token?: string;
   readonly options?: RedditClientOptions;
 };
 
@@ -36,6 +38,7 @@ export default class RedditClient implements RedditClientInterface {
   private readonly client_id: string;
   private readonly redirect_uri: string;
   private readonly user_agent: string;
+  private readonly maxRetry: number;
   private readonly client_secret?: string;
   private readonly refresh_token?: string;
   // tslint:disable readonly-keyword
@@ -43,7 +46,6 @@ export default class RedditClient implements RedditClientInterface {
   private ratelimit_remaining?: number;
   private ratelimit_reset?: number;
   private inProgress: number;
-  private retry: number;
 
   constructor({
     client_id,
@@ -51,6 +53,7 @@ export default class RedditClient implements RedditClientInterface {
     client_secret,
     refresh_token,
     user_agent,
+    access_token,
     options,
   }: RedditClientConstructorArgs) {
     this.client_id = client_id;
@@ -59,7 +62,11 @@ export default class RedditClient implements RedditClientInterface {
     this.client_secret = client_secret;
     this.refresh_token = refresh_token;
 
-    this.retry = (options && options.retry) || 1;
+    if (access_token) {
+      this.access_token = access_token;
+    }
+
+    this.maxRetry = (options && options.maxRetry) || 1;
     this.inProgress = 0;
     // this.access_token = '24628247-KdovbyetN3uXy4XwQvQFTGWTing';
   }
@@ -144,7 +151,7 @@ export default class RedditClient implements RedditClientInterface {
       throw new BadOauthCredentialsError();
     }
 
-    if (response.status >= 500 && this.retry < retrying) {
+    if (response.status >= 500 && this.maxRetry > retrying) {
       await timeout(retrying * 1000);
       return this.makeRequest(url, requestOptions, retrying + 1);
     }

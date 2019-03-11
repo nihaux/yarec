@@ -7,7 +7,7 @@ import RedditClient, {
 import * as getTokenModule from './getToken';
 import * as refreshTokenModule from './refreshToken';
 import { ScopeEnum } from './types';
-import { BadOauthCredentialsError } from './errors';
+import { BadOauthCredentialsError, RedditBackendError } from './errors';
 
 const fetch = (global as GlobalWithFetchMock).fetch;
 
@@ -182,6 +182,93 @@ describe('RedditClient', () => {
       }
       expect(getTokenSpy.mock.calls.length).toEqual(2);
       expect(fetch.mock.calls.length).toEqual(2);
+    });
+  });
+  describe('retry when reddit is down', () => {
+    it('should retry once by default and throw if still error', async () => {
+      const response = { whateverfornow: 'toto' };
+      fetch.mockResponses(
+        [JSON.stringify(response), { status: 500 }],
+        [JSON.stringify(response), { status: 502 }],
+      );
+
+      const r = new RedditClient({
+        client_id,
+        redirect_uri,
+        user_agent,
+      });
+      expect.assertions(2); // to make sure we pass in catch
+      try {
+        await r.getLinks({ subredditName: 'nosleep', sort: SortLinksEnum.new });
+      } catch (e) {
+        expect(e).toEqual(new RedditBackendError());
+      }
+      expect(fetch.mock.calls.length).toEqual(2);
+    });
+    it('should retry options.maxRetry times every time wait 1s * retry', async done => {
+      jest.useFakeTimers();
+      const response = { whateverfornow: 'toto' };
+      fetch.mockResponses(
+        [JSON.stringify(response), { status: 500 }],
+        [JSON.stringify(response), { status: 502 }],
+        [JSON.stringify(response), { status: 502 }],
+        [JSON.stringify(response), { status: 502 }],
+        [JSON.stringify(response), { status: 502 }],
+        [JSON.stringify(response), { status: 502 }],
+      );
+
+      const r = new RedditClient({
+        client_id,
+        redirect_uri,
+        user_agent,
+        access_token: 'an access token',
+        options: { maxRetry: 5 },
+      });
+
+      let runAllTimers = true;
+      expect(r.getLinks({ subredditName: 'nosleep', sort: SortLinksEnum.new }))
+        .rejects.toEqual(new RedditBackendError())
+        .then(() => {
+          expect(fetch.mock.calls.length).toEqual(6);
+          expect(setTimeout).toHaveBeenCalledTimes(5);
+          expect(setTimeout).toHaveBeenNthCalledWith(1, expect.any(Function), 0);
+          expect(setTimeout).toHaveBeenNthCalledWith(2, expect.any(Function), 1000);
+          expect(setTimeout).toHaveBeenNthCalledWith(3, expect.any(Function), 2000);
+          expect(setTimeout).toHaveBeenNthCalledWith(4, expect.any(Function), 3000);
+          expect(setTimeout).toHaveBeenNthCalledWith(5, expect.any(Function), 4000);
+        })
+        .finally(() => {
+          runAllTimers = false;
+          jest.useRealTimers();
+          done();
+        });
+
+      /*
+        so here..
+
+        during the call to r.getLinks multiple things happened multiple times:
+        - await [someFunction]
+        - await timeout (aka await setTimeout to resolve)
+
+        we can't await for r.getLinks, otherwise we can't call jest.runAllTimers and the test is stuck
+
+        from what I constated:
+        r.getLinks runs until it found the first awaited function (which is not a await timeout)
+        then the test takeover and keeps running: if we don't await somewhere in the test then
+        it will run until the end before r.getLinks can takeover.
+        Once the test is done running, r.getLinks resume and get stuck on await timeout.
+
+        if we await somewhere in the test, then r.getLinks can take over and run to until the next awaited function.
+        at some point it will encounter "await timeout" and we will need to call jest.runAllTimers to allow it to go further
+        then another awaited function, etc...
+
+        So in order to make it work we have to "ping pong" between the test and the running function.
+        Each time one of them await, it allows the other to run until next await.
+        So far this loop is how I solve the issue, I'll be glad if you have a better way to do it :)
+      */
+      while (runAllTimers) {
+        await jest.runAllTimers();
+      }
     });
   });
   describe('getLinks', () => {
