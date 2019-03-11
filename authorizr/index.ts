@@ -97,9 +97,9 @@ const requestHandler: http.RequestListener = (request, response) => {
 
   getToken({
     code,
-    clientId: decodedState.clientId,
-    clientSecret: decodedState.clientSecret,
-    redirectUri,
+    client_id: decodedState.clientId,
+    client_secret: decodedState.clientSecret,
+    redirect_uri: redirectUri,
   }).then(jsonResponse => {
     response.end(JSON.stringify(jsonResponse));
   });

@@ -1,14 +1,9 @@
 {
   "extends": [
     "tslint-config-standard",
-    "tslint-config-prettier",
-    "tslint-immutable/all"
+    "tslint-config-prettier"
   ],
   "rules": {
-    "no-this": false,
-    "no-class": false,
-    "no-expression-statement": false,
-    "no-if-statement": false,
     "variable-name": false
   }
 }

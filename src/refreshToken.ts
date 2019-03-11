@@ -2,6 +2,7 @@ import { getBasicAuthHeader } from './utils/getBasicAuthHeader';
 import { makePost } from './utils/makePost';
 import { MissingRefreshTokenError } from './errors';
 import { validateTokenResponse } from './utils/validateTokenResponse';
+import { TokenResponse } from './types';
 
 export type RefreshTokenArgs = {
   readonly refresh_token: string;
@@ -13,7 +14,7 @@ export const refreshToken = async ({
   refresh_token,
   client_id,
   client_secret,
-}: RefreshTokenArgs) => {
+}: RefreshTokenArgs): Promise<TokenResponse> => {
   const url = 'https://www.reddit.com/api/v1/access_token';
   const body = {
     grant_type: 'refresh_token',
