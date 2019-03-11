@@ -16,7 +16,7 @@ export type GetAccessTokenArgs = WithCodeGetAccessTokenArgs | AppOnlyGetAccessTo
 
 export type GetAccessTokenResponse = {
   readonly access_token: string;
-  readonly token_type: string;
+  readonly token_type: 'bearer';
   readonly expires_in: number;
   readonly scope: ReadonlyArray<ScopeEnum>;
   readonly refresh_token?: string;

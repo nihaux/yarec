@@ -23,7 +23,8 @@ type RedditClientConstructorArgs = {
   readonly refresh_token?: string;
 };
 
-const API_ENDPOINT = 'https://oauth.reddit.com';
+export const API_ENDPOINT = 'https://oauth.reddit.com';
+export const MIN_REMAINING_REQUEST_THRESHOLD = 5;
 
 export default class RedditClient implements RedditClientInterface {
   private readonly client_id: string;
@@ -75,7 +76,7 @@ export default class RedditClient implements RedditClientInterface {
     mode: 'cors' as 'cors',
     credentials: 'include' as 'include',
     headers: {
-      Authorization: `bearer ${this.access_token}`,
+      Authorization: `Bearer ${this.access_token}`,
       'User-Agent': this.user_agent,
     },
   });
@@ -97,7 +98,7 @@ export default class RedditClient implements RedditClientInterface {
     }
 
     const realRemaining = this.ratelimit_remaining - this.inProgress;
-    if (realRemaining >= 5) {
+    if (realRemaining >= MIN_REMAINING_REQUEST_THRESHOLD) {
       return;
     }
     await timeout(this.ratelimit_reset * 1000);
