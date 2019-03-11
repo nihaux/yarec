@@ -4,6 +4,7 @@ import { refreshToken } from './refreshToken';
 import { encodeBodyPost } from './utils/encodeBodyPost';
 import { Link, Listing } from './types';
 import { timeout } from './utils/timeout';
+import { BadOauthCredentialsError, RedditBackendError } from './errors';
 
 export enum SortLinksEnum {
   new = 'new',
@@ -15,12 +16,17 @@ export enum SortLinksEnum {
 }
 interface RedditClientInterface {}
 
+type RedditClientOptions = {
+  readonly retry: number;
+};
+
 type RedditClientConstructorArgs = {
   readonly client_id: string;
   readonly redirect_uri: string;
   readonly user_agent: string;
   readonly client_secret?: string;
   readonly refresh_token?: string;
+  readonly options?: RedditClientOptions;
 };
 
 export const API_ENDPOINT = 'https://oauth.reddit.com';
@@ -37,6 +43,7 @@ export default class RedditClient implements RedditClientInterface {
   private ratelimit_remaining?: number;
   private ratelimit_reset?: number;
   private inProgress: number;
+  private retry: number;
 
   constructor({
     client_id,
@@ -44,16 +51,21 @@ export default class RedditClient implements RedditClientInterface {
     client_secret,
     refresh_token,
     user_agent,
+    options,
   }: RedditClientConstructorArgs) {
     this.client_id = client_id;
     this.user_agent = user_agent;
     this.redirect_uri = redirect_uri;
     this.client_secret = client_secret;
     this.refresh_token = refresh_token;
+
+    this.retry = (options && options.retry) || 1;
     this.inProgress = 0;
+    // this.access_token = '24628247-KdovbyetN3uXy4XwQvQFTGWTing';
   }
 
   private fetchAccessToken = async () => {
+    // @todo handle race condition
     if (this.refresh_token) {
       const tokenObject = await refreshToken({
         refresh_token: this.refresh_token,
@@ -104,6 +116,45 @@ export default class RedditClient implements RedditClientInterface {
     await timeout(this.ratelimit_reset * 1000);
   };
 
+  private makeRequest = async (
+    url: string,
+    requestOptions: RequestInit,
+    retrying: number = 0,
+  ): Promise<Response> => {
+    if (!this.access_token) {
+      await this.fetchAccessToken();
+    }
+
+    await this.maybeWait();
+
+    this.inProgress++;
+    const response = await fetch(url, {
+      ...this.getFetchOptions(),
+      ...requestOptions,
+    });
+    this.inProgress--;
+
+    this.extractRateLimitFromHeaders(response.headers);
+
+    if (response.status === 401 && retrying === 0) {
+      await this.fetchAccessToken();
+      return this.makeRequest(url, requestOptions, 1);
+    }
+    if (response.status === 401) {
+      throw new BadOauthCredentialsError();
+    }
+
+    if (response.status >= 500 && this.retry < retrying) {
+      await timeout(retrying * 1000);
+      return this.makeRequest(url, requestOptions, retrying + 1);
+    }
+    if (response.status >= 500) {
+      throw new RedditBackendError();
+    }
+
+    return response;
+  };
+
   private get = async ({
     path,
     query,
@@ -111,21 +162,13 @@ export default class RedditClient implements RedditClientInterface {
     path: string;
     query?: Record<string, string | boolean | number | undefined>;
   }) => {
-    if (!this.access_token) {
-      await this.fetchAccessToken();
-    }
     let urlWithQuery = `${API_ENDPOINT}${path}`;
     if (query) {
       urlWithQuery = `${API_ENDPOINT}${path}?${encodeBodyPost(query)}`;
     }
-    await this.maybeWait();
-    this.inProgress++;
-    const response = await fetch(urlWithQuery, {
+    const response = await this.makeRequest(urlWithQuery, {
       method: 'GET',
-      ...this.getFetchOptions(),
     });
-    this.extractRateLimitFromHeaders(response.headers);
-    this.inProgress--;
     return response.json();
   };
 

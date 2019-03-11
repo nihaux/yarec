@@ -7,6 +7,7 @@ import RedditClient, {
 import * as getTokenModule from './getToken';
 import * as refreshTokenModule from './refreshToken';
 import { ScopeEnum } from './types';
+import { BadOauthCredentialsError } from './errors';
 
 const fetch = (global as GlobalWithFetchMock).fetch;
 
@@ -141,6 +142,46 @@ describe('RedditClient', () => {
 
       expect(setTimeout).toHaveBeenCalledTimes(0);
       jest.useRealTimers();
+    });
+  });
+  describe('token renewal', () => {
+    it('should renew the token and retry the request if server respond with 401', async () => {
+      const response = { whateverfornow: 'toto' };
+      fetch.mockResponses(
+        [JSON.stringify(response), { status: 401 }],
+        [JSON.stringify(response), { status: 200 }],
+      );
+
+      const r = new RedditClient({
+        client_id,
+        redirect_uri,
+        user_agent,
+      });
+      const links = await r.getLinks({ subredditName: 'nosleep', sort: SortLinksEnum.new });
+      expect(getTokenSpy.mock.calls.length).toEqual(2);
+      expect(links).toEqual(response);
+    });
+    it('should throw if server keeps respond 401 despite token renewal', async () => {
+      const response = { whateverfornow: 'toto' };
+      fetch.mockResponses(
+        [JSON.stringify(response), { status: 401 }],
+        [JSON.stringify(response), { status: 401 }],
+        [JSON.stringify(response), { status: 200 }],
+      );
+
+      const r = new RedditClient({
+        client_id,
+        redirect_uri,
+        user_agent,
+      });
+      expect.assertions(3); // to make sure we pass in catch
+      try {
+        await r.getLinks({ subredditName: 'nosleep', sort: SortLinksEnum.new });
+      } catch (e) {
+        expect(e).toEqual(new BadOauthCredentialsError());
+      }
+      expect(getTokenSpy.mock.calls.length).toEqual(2);
+      expect(fetch.mock.calls.length).toEqual(2);
     });
   });
   describe('getLinks', () => {

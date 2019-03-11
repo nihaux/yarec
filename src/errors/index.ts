@@ -7,6 +7,13 @@ export class BadClientCredentialsError extends Error {
     Object.setPrototypeOf(this, BadClientCredentialsError.prototype);
   }
 }
+export class BadOauthCredentialsError extends Error {
+  constructor() {
+    /* istanbul ignore next line */
+    super('Bad access_token used as Bearer');
+    Object.setPrototypeOf(this, BadOauthCredentialsError.prototype);
+  }
+}
 
 export class BadAuthorizationCodeError extends Error {
   constructor() {
