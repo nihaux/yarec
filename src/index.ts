@@ -185,13 +185,18 @@ export default class RedditClient implements RedditClientInterface {
     before,
     after,
     count,
+    limit,
   }: {
     subredditName: string;
     sort: SortLinksEnum;
     before?: string;
     after?: string;
     count?: number;
+    limit?: number;
   }): Promise<Listing<Link>> => {
-    return this.get({ path: `/r/${subredditName}/${sort}`, query: { before, after, count } });
+    return this.get({
+      path: `/r/${subredditName}/${sort}`,
+      query: { before, after, count, limit },
+    });
   };
 }
