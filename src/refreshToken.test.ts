@@ -57,14 +57,17 @@ describe('refreshToken', () => {
   });
   it('should throw if refresh token missing from request', async () => {
     fetch.mockResponseOnce(JSON.stringify({ refresh_token: 'NO_TEXT' }));
+    // tslint:disable-next-line no-floating-promises
     expect(refreshToken(refreshParams)).rejects.toEqual(new MissingRefreshTokenError());
   });
   it('should throw if reddit returns 401', async () => {
     fetch.mockResponseOnce('whatever', { status: 401 });
+    // tslint:disable-next-line no-floating-promises
     expect(refreshToken(refreshParams)).rejects.toEqual(new BadClientCredentialsError());
   });
   it('should throw if reddit return 5xx response', async () => {
     fetch.mockResponseOnce('whatever', { status: 502 });
+    // tslint:disable-next-line no-floating-promises
     expect(refreshToken(refreshParams)).rejects.toEqual(new RedditBackendError());
   });
 });

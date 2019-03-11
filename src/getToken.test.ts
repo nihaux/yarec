@@ -122,36 +122,43 @@ describe('getAccessToken', () => {
   });
   it('should throw if reddit returns 401', async () => {
     fetch.mockResponseOnce('whatever', { status: 401 });
+    // tslint:disable-next-line no-floating-promises
     expect(getToken(accessParams)).rejects.toEqual(new BadClientCredentialsError());
   });
   it('should throw if body contains error', async () => {
     const error = 'something bad happened';
     fetch.mockResponseOnce(JSON.stringify({ error }));
+    // tslint:disable-next-line no-floating-promises
     expect(getToken(accessParams)).rejects.toEqual(new Error(error));
 
     const invalidGrantError = 'invalid_grant';
     fetch.mockResponseOnce(JSON.stringify({ error: invalidGrantError }));
+    // tslint:disable-next-line no-floating-promises
     expect(getToken(accessParams)).rejects.toEqual(new BadAuthorizationCodeError());
   });
   it('should throw if body does not contains all mandatory values', async () => {
     fetch.mockResponseOnce(
       JSON.stringify({ access_token: 'asf', token_type: 'bearer', expires_in: 3600 }),
     );
+    // tslint:disable-next-line no-floating-promises
     expect(getToken(accessParams)).rejects.toEqual(new RedditIncompleteResponseError(['scope']));
 
     fetch.mockResponseOnce(JSON.stringify({ token_type: 'bearer', expires_in: 3600 }));
+    // tslint:disable-next-line no-floating-promises
     expect(getToken(accessParams)).rejects.toEqual(
       new RedditIncompleteResponseError(['access_token', 'scope']),
     );
     fetch.mockResponseOnce(
       JSON.stringify({ access_token: 'asf', token_type: 'bearer', scope: 'read' }),
     );
+    // tslint:disable-next-line no-floating-promises
     expect(getToken(accessParams)).rejects.toEqual(
       new RedditIncompleteResponseError(['expires_in']),
     );
   });
   it('should throw if reddit return 5xx response', async () => {
     fetch.mockResponseOnce('whatever', { status: 502 });
+    // tslint:disable-next-line no-floating-promises
     expect(getToken(accessParams)).rejects.toEqual(new RedditBackendError());
   });
 });

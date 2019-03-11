@@ -110,6 +110,7 @@ describe('RedditClient', () => {
       });
 
       await r.getLinks({ subredditName: 'nosleep', sort: SortLinksEnum.new });
+      // tslint:disable-next-line no-floating-promises
       r.getLinks({ subredditName: 'nosleep', sort: SortLinksEnum.new });
 
       jest.runAllTimers();
@@ -136,6 +137,7 @@ describe('RedditClient', () => {
       });
 
       await r.getLinks({ subredditName: 'nosleep', sort: SortLinksEnum.new });
+      // tslint:disable-next-line no-floating-promises
       r.getLinks({ subredditName: 'nosleep', sort: SortLinksEnum.new });
 
       jest.runAllTimers();
@@ -226,6 +228,7 @@ describe('RedditClient', () => {
       });
 
       let runAllTimers = true;
+      // tslint:disable-next-line no-floating-promises
       expect(r.getLinks({ subredditName: 'nosleep', sort: SortLinksEnum.new }))
         .rejects.toEqual(new RedditBackendError())
         .then(() => {
@@ -267,6 +270,7 @@ describe('RedditClient', () => {
         So far this loop is how I solve the issue, I'll be glad if you have a better way to do it :)
       */
       while (runAllTimers) {
+        // tslint:disable-next-line await-promise
         await jest.runAllTimers();
       }
     });
