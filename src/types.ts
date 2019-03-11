@@ -66,7 +66,7 @@ export interface Listing<T> {
     before: string | null;
     after: string | null;
     modhash: string | null;
-    children: T[];
+    children: { kind: string; data: T }[];
   };
 }
 
