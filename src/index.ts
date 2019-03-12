@@ -179,24 +179,36 @@ export default class RedditClient implements RedditClientInterface {
     return response.json();
   };
 
-  public getLinks = async ({
-    subredditName,
-    sort,
-    before,
-    after,
-    count,
-    limit,
-  }: {
-    subredditName: string;
-    sort: SortLinksEnum;
-    before?: string;
-    after?: string;
-    count?: number;
-    limit?: number;
-  }): Promise<Listing<Link>> => {
+  public listSubredditLinks = async (
+    subredditName: string,
+    {
+      sort,
+      before,
+      after,
+      count,
+      limit,
+    }: {
+      sort: SortLinksEnum;
+      before?: string;
+      after?: string;
+      count?: number;
+      limit?: number;
+    },
+  ): Promise<Listing<Link>> => {
     return this.get({
       path: `/r/${subredditName}/${sort}`,
       query: { before, after, count, limit },
     });
+  };
+
+  public getInfo = async <T>(ids: string[]): Promise<Listing<T>> => {
+    return this.get({
+      path: `/api/info`,
+      query: { id: ids.join(',') },
+    });
+  };
+
+  public getLinks = async (ids: string[]) => {
+    return this.getInfo<Link>(ids);
   };
 }

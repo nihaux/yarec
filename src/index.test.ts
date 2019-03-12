@@ -45,7 +45,7 @@ describe('RedditClient', () => {
         redirect_uri,
         user_agent,
       });
-      await r.getLinks({ subredditName: 'nosleep', sort: SortLinksEnum.new });
+      await r.listSubredditLinks('nosleep', { sort: SortLinksEnum.new });
       expect(getTokenSpy.mock.calls.length).toEqual(1);
       expect(getTokenSpy.mock.calls[0][0]).toEqual({
         client_id,
@@ -63,7 +63,7 @@ describe('RedditClient', () => {
         user_agent,
         refresh_token,
       });
-      await r.getLinks({ subredditName: 'nosleep', sort: SortLinksEnum.new });
+      await r.listSubredditLinks('nosleep', { sort: SortLinksEnum.new });
       expect(refreshTokenSpy.mock.calls.length).toEqual(1);
       expect(refreshTokenSpy.mock.calls[0][0]).toEqual({
         refresh_token,
@@ -82,10 +82,10 @@ describe('RedditClient', () => {
         refresh_token,
       });
 
-      await r.getLinks({ subredditName: 'nosleep', sort: SortLinksEnum.new });
-      await r.getLinks({ subredditName: 'nosleep', sort: SortLinksEnum.new });
-      await r.getLinks({ subredditName: 'nosleep', sort: SortLinksEnum.new });
-      await r.getLinks({ subredditName: 'nosleep', sort: SortLinksEnum.new });
+      await r.listSubredditLinks('nosleep', { sort: SortLinksEnum.new });
+      await r.listSubredditLinks('nosleep', { sort: SortLinksEnum.new });
+      await r.listSubredditLinks('nosleep', { sort: SortLinksEnum.new });
+      await r.listSubredditLinks('nosleep', { sort: SortLinksEnum.new });
 
       expect(fetch.mock.calls.length).toEqual(4);
       expect(refreshTokenSpy.mock.calls.length).toEqual(1);
@@ -109,9 +109,9 @@ describe('RedditClient', () => {
         refresh_token,
       });
 
-      await r.getLinks({ subredditName: 'nosleep', sort: SortLinksEnum.new });
+      await r.listSubredditLinks('nosleep', { sort: SortLinksEnum.new });
       // tslint:disable-next-line no-floating-promises
-      r.getLinks({ subredditName: 'nosleep', sort: SortLinksEnum.new });
+      r.listSubredditLinks('nosleep', { sort: SortLinksEnum.new });
 
       jest.runAllTimers();
 
@@ -136,9 +136,9 @@ describe('RedditClient', () => {
         refresh_token,
       });
 
-      await r.getLinks({ subredditName: 'nosleep', sort: SortLinksEnum.new });
+      await r.listSubredditLinks('nosleep', { sort: SortLinksEnum.new });
       // tslint:disable-next-line no-floating-promises
-      r.getLinks({ subredditName: 'nosleep', sort: SortLinksEnum.new });
+      r.listSubredditLinks('nosleep', { sort: SortLinksEnum.new });
 
       jest.runAllTimers();
 
@@ -159,7 +159,7 @@ describe('RedditClient', () => {
         redirect_uri,
         user_agent,
       });
-      const links = await r.getLinks({ subredditName: 'nosleep', sort: SortLinksEnum.new });
+      const links = await r.listSubredditLinks('nosleep', { sort: SortLinksEnum.new });
       expect(getTokenSpy.mock.calls.length).toEqual(2);
       expect(links).toEqual(response);
     });
@@ -178,7 +178,7 @@ describe('RedditClient', () => {
       });
       expect.assertions(3); // to make sure we pass in catch
       try {
-        await r.getLinks({ subredditName: 'nosleep', sort: SortLinksEnum.new });
+        await r.listSubredditLinks('nosleep', { sort: SortLinksEnum.new });
       } catch (e) {
         expect(e).toEqual(new BadOauthCredentialsError());
       }
@@ -201,7 +201,7 @@ describe('RedditClient', () => {
       });
       expect.assertions(2); // to make sure we pass in catch
       try {
-        await r.getLinks({ subredditName: 'nosleep', sort: SortLinksEnum.new });
+        await r.listSubredditLinks('nosleep', { sort: SortLinksEnum.new });
       } catch (e) {
         expect(e).toEqual(new RedditBackendError());
       }
@@ -229,7 +229,7 @@ describe('RedditClient', () => {
 
       let runAllTimers = true;
       // tslint:disable-next-line no-floating-promises
-      expect(r.getLinks({ subredditName: 'nosleep', sort: SortLinksEnum.new }))
+      expect(r.listSubredditLinks('nosleep', { sort: SortLinksEnum.new }))
         .rejects.toEqual(new RedditBackendError())
         .then(() => {
           expect(fetch.mock.calls.length).toEqual(6);
@@ -249,19 +249,19 @@ describe('RedditClient', () => {
       /*
         so here..
 
-        during the call to r.getLinks multiple things happened multiple times:
+        during the call to r.listSubredditLinks multiple things happened multiple times:
         - await [someFunction]
         - await timeout (aka await setTimeout to resolve)
 
-        we can't await for r.getLinks, otherwise we can't call jest.runAllTimers and the test is stuck
+        we can't await for r.listSubredditLinks, otherwise we can't call jest.runAllTimers and the test is stuck
 
         from what I constated:
-        r.getLinks runs until it found the first awaited function (which is not a await timeout)
+        r.listSubredditLinks runs until it found the first awaited function (which is not a await timeout)
         then the test takeover and keeps running: if we don't await somewhere in the test then
-        it will run until the end before r.getLinks can takeover.
-        Once the test is done running, r.getLinks resume and get stuck on await timeout.
+        it will run until the end before r.listSubredditLinks can takeover.
+        Once the test is done running, r.listSubredditLinks resume and get stuck on await timeout.
 
-        if we await somewhere in the test, then r.getLinks can take over and run to until the next awaited function.
+        if we await somewhere in the test, then r.listSubredditLinks can take over and run to until the next awaited function.
         at some point it will encounter "await timeout" and we will need to call jest.runAllTimers to allow it to go further
         then another awaited function, etc...
 
@@ -275,6 +275,36 @@ describe('RedditClient', () => {
       }
     });
   });
+  describe('listSubredditLinks', () => {
+    it('should make a fetch call to the api', async () => {
+      const response = { whateverfornow: 'toto' };
+      fetch.mockResponseOnce(JSON.stringify(response));
+
+      const r = new RedditClient({
+        client_id,
+        redirect_uri,
+        user_agent,
+      });
+
+      await r.listSubredditLinks('nosleep', { sort: SortLinksEnum.new });
+
+      const expectedCall: ReadonlyArray<any> = [
+        `${API_ENDPOINT}/r/nosleep/new?`,
+        {
+          method: 'GET',
+          mode: 'cors',
+          credentials: 'include',
+          headers: {
+            Authorization: `Bearer ${tokenResponse.access_token}`,
+            'User-Agent': user_agent,
+          },
+        },
+      ];
+
+      expect(fetch.mock.calls.length).toEqual(1);
+      expect(fetch.mock.calls[0]).toEqual(expectedCall);
+    });
+  });
   describe('getLinks', () => {
     it('should make a fetch call to the api', async () => {
       const response = { whateverfornow: 'toto' };
@@ -286,10 +316,12 @@ describe('RedditClient', () => {
         user_agent,
       });
 
-      await r.getLinks({ subredditName: 'nosleep', sort: SortLinksEnum.new });
+      const ids = ['t3_asdfww', 't3_lkj3jk', 't3_oek43k'];
+
+      await r.getLinks(ids);
 
       const expectedCall: ReadonlyArray<any> = [
-        `${API_ENDPOINT}/r/nosleep/new?`,
+        `${API_ENDPOINT}/api/info?id=${encodeURIComponent(ids.join(','))}`,
         {
           method: 'GET',
           mode: 'cors',
