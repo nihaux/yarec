@@ -1,6 +1,6 @@
 {
   "name": "yarec",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "",
   "keywords": [],
   "main": "dist/index.umd.js",
@@ -35,7 +35,8 @@
     "precommit": "lint-staged",
     "travis-deploy-once": "travis-deploy-once",
     "authorizr": "ts-node -O '{\"module\": \"commonjs\"}' ./authorizr/index.ts",
-    "t": "ts-node -O '{\"module\": \"commonjs\"}' ./test.ts"
+    "t": "ts-node -O '{\"module\": \"commonjs\"}' ./test.ts",
+    "bp": "yarn test && yarn build && npm publish"
   },
   "lint-staged": {
     "{src,test}/**/*.ts": [
