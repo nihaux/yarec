@@ -1,4 +1,3 @@
-import 'cross-fetch/polyfill';
 import { getToken } from './getToken';
 import { refreshToken } from './refreshToken';
 import { encodeBodyPost } from './utils/encodeBodyPost';

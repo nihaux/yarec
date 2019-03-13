@@ -1,4 +1,3 @@
-import 'cross-fetch/polyfill';
 import { encodeBodyPost } from './encodeBodyPost';
 import { BadClientCredentialsError, RedditBackendError } from '../errors';
 
