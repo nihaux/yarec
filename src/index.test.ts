@@ -7,7 +7,7 @@ import RedditClient, {
 import * as getTokenModule from './getToken';
 import * as refreshTokenModule from './refreshToken';
 import { ScopeEnum } from './types';
-import { BadOauthCredentialsError, RedditBackendError } from './errors';
+import { BadOauthCredentialsError, RedditBackendError, UnauthorizedError } from './errors';
 
 const fetch = (global as GlobalWithFetchMock).fetch;
 
@@ -28,6 +28,21 @@ getTokenSpy.mockResolvedValue(Promise.resolve(tokenResponse));
 
 const refreshTokenSpy = jest.spyOn(refreshTokenModule, 'refreshToken');
 refreshTokenSpy.mockResolvedValue(Promise.resolve(tokenResponse));
+
+const getMockedGetCall = (path: string) => {
+  return [
+    `${API_ENDPOINT}${path}`,
+    {
+      method: 'GET',
+      mode: 'cors',
+      credentials: 'include',
+      headers: {
+        Authorization: `Bearer ${tokenResponse.access_token}`,
+        'User-Agent': user_agent,
+      },
+    },
+  ];
+};
 
 describe('RedditClient', () => {
   beforeEach(() => {
@@ -275,6 +290,25 @@ describe('RedditClient', () => {
       }
     });
   });
+  describe('unauthorized error', () => {
+    it('should throw if reddit returns 403', async () => {
+      const response = { whateverfornow: 'toto' };
+      fetch.mockResponseOnce(JSON.stringify(response), { status: 403 });
+
+      const r = new RedditClient({
+        client_id,
+        redirect_uri,
+        user_agent,
+      });
+      expect.assertions(2); // to make sure we pass in catch
+      try {
+        await r.listSubredditLinks('nosleep', { sort: SortLinksEnum.new });
+      } catch (e) {
+        expect(e).toEqual(new UnauthorizedError());
+      }
+      expect(fetch.mock.calls.length).toEqual(1);
+    });
+  });
   describe('listSubredditLinks', () => {
     it('should make a fetch call to the api', async () => {
       const response = { whateverfornow: 'toto' };
@@ -288,18 +322,7 @@ describe('RedditClient', () => {
 
       await r.listSubredditLinks('nosleep', { sort: SortLinksEnum.new });
 
-      const expectedCall: ReadonlyArray<any> = [
-        `${API_ENDPOINT}/r/nosleep/new?`,
-        {
-          method: 'GET',
-          mode: 'cors',
-          credentials: 'include',
-          headers: {
-            Authorization: `Bearer ${tokenResponse.access_token}`,
-            'User-Agent': user_agent,
-          },
-        },
-      ];
+      const expectedCall = getMockedGetCall(`/r/nosleep/new?`);
 
       expect(fetch.mock.calls.length).toEqual(1);
       expect(fetch.mock.calls[0]).toEqual(expectedCall);
@@ -320,21 +343,172 @@ describe('RedditClient', () => {
 
       await r.getLinks(ids);
 
-      const expectedCall: ReadonlyArray<any> = [
-        `${API_ENDPOINT}/api/info?id=${encodeURIComponent(ids.join(','))}`,
-        {
-          method: 'GET',
-          mode: 'cors',
-          credentials: 'include',
-          headers: {
-            Authorization: `Bearer ${tokenResponse.access_token}`,
-            'User-Agent': user_agent,
-          },
-        },
-      ];
+      const expectedCall = getMockedGetCall(`/api/info?id=${encodeURIComponent(ids.join(','))}`);
 
       expect(fetch.mock.calls.length).toEqual(1);
       expect(fetch.mock.calls[0]).toEqual(expectedCall);
+    });
+  });
+  describe('user history listings', () => {
+    describe('listUserSubmitted', () => {
+      it('should make a fetch call to the api', async () => {
+        const response = { whateverfornow: 'toto' };
+        fetch.mockResponseOnce(JSON.stringify(response));
+
+        const r = new RedditClient({
+          client_id,
+          redirect_uri,
+          user_agent,
+        });
+
+        const username = 'toto';
+        await r.listUserSubmitted(username);
+
+        const expectedCall = getMockedGetCall(`/user/${username}/submitted`);
+
+        expect(fetch.mock.calls.length).toEqual(1);
+        expect(fetch.mock.calls[0]).toEqual(expectedCall);
+      });
+    });
+    describe('listUserUpvoted', () => {
+      it('should make a fetch call to the api', async () => {
+        const response = { whateverfornow: 'toto' };
+        fetch.mockResponseOnce(JSON.stringify(response));
+
+        const r = new RedditClient({
+          client_id,
+          redirect_uri,
+          user_agent,
+        });
+
+        const username = 'toto';
+        await r.listUserUpvoted(username);
+
+        const expectedCall = getMockedGetCall(`/user/${username}/upvoted`);
+
+        expect(fetch.mock.calls.length).toEqual(1);
+        expect(fetch.mock.calls[0]).toEqual(expectedCall);
+      });
+    });
+    describe('listUserDownvoted', () => {
+      it('should make a fetch call to the api', async () => {
+        const response = { whateverfornow: 'toto' };
+        fetch.mockResponseOnce(JSON.stringify(response));
+
+        const r = new RedditClient({
+          client_id,
+          redirect_uri,
+          user_agent,
+        });
+
+        const username = 'toto';
+        await r.listUserDownvoted(username);
+
+        const expectedCall = getMockedGetCall(`/user/${username}/downvoted`);
+
+        expect(fetch.mock.calls.length).toEqual(1);
+        expect(fetch.mock.calls[0]).toEqual(expectedCall);
+      });
+    });
+    describe('listUserComments', () => {
+      it('should make a fetch call to the api', async () => {
+        const response = { whateverfornow: 'toto' };
+        fetch.mockResponseOnce(JSON.stringify(response));
+
+        const r = new RedditClient({
+          client_id,
+          redirect_uri,
+          user_agent,
+        });
+
+        const username = 'toto';
+        await r.listUserComments(username);
+
+        const expectedCall = getMockedGetCall(`/user/${username}/comments`);
+
+        expect(fetch.mock.calls.length).toEqual(1);
+        expect(fetch.mock.calls[0]).toEqual(expectedCall);
+      });
+    });
+    describe('listUserGilded', () => {
+      it('should make a fetch call to the api', async () => {
+        const response = { whateverfornow: 'toto' };
+        fetch.mockResponseOnce(JSON.stringify(response));
+
+        const r = new RedditClient({
+          client_id,
+          redirect_uri,
+          user_agent,
+        });
+
+        const username = 'toto';
+        await r.listUserGilded(username);
+
+        const expectedCall = getMockedGetCall(`/user/${username}/gilded`);
+
+        expect(fetch.mock.calls.length).toEqual(1);
+        expect(fetch.mock.calls[0]).toEqual(expectedCall);
+      });
+    });
+    describe('listUserHidden', () => {
+      it('should make a fetch call to the api', async () => {
+        const response = { whateverfornow: 'toto' };
+        fetch.mockResponseOnce(JSON.stringify(response));
+
+        const r = new RedditClient({
+          client_id,
+          redirect_uri,
+          user_agent,
+        });
+
+        const username = 'toto';
+        await r.listUserHidden(username);
+
+        const expectedCall = getMockedGetCall(`/user/${username}/hidden`);
+
+        expect(fetch.mock.calls.length).toEqual(1);
+        expect(fetch.mock.calls[0]).toEqual(expectedCall);
+      });
+    });
+    describe('listUserSaved', () => {
+      it('should make a fetch call to the api', async () => {
+        const response = { whateverfornow: 'toto' };
+        fetch.mockResponseOnce(JSON.stringify(response));
+
+        const r = new RedditClient({
+          client_id,
+          redirect_uri,
+          user_agent,
+        });
+
+        const username = 'toto';
+        await r.listUserSaved(username);
+
+        const expectedCall = getMockedGetCall(`/user/${username}/saved`);
+
+        expect(fetch.mock.calls.length).toEqual(1);
+        expect(fetch.mock.calls[0]).toEqual(expectedCall);
+      });
+    });
+    describe('listUserOverview', () => {
+      it('should make a fetch call to the api', async () => {
+        const response = { whateverfornow: 'toto' };
+        fetch.mockResponseOnce(JSON.stringify(response));
+
+        const r = new RedditClient({
+          client_id,
+          redirect_uri,
+          user_agent,
+        });
+
+        const username = 'toto';
+        await r.listUserOverview(username);
+
+        const expectedCall = getMockedGetCall(`/user/${username}/overview`);
+
+        expect(fetch.mock.calls.length).toEqual(1);
+        expect(fetch.mock.calls[0]).toEqual(expectedCall);
+      });
     });
   });
 });

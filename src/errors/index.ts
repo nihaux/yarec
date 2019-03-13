@@ -46,3 +46,11 @@ export class RedditIncompleteResponseError extends Error {
     Object.setPrototypeOf(this, RedditIncompleteResponseError.prototype);
   }
 }
+
+export class UnauthorizedError extends Error {
+  constructor() {
+    /* istanbul ignore next line */
+    super(`You don't have sufficient permission to do this (Unauthorized 403)`);
+    Object.setPrototypeOf(this, UnauthorizedError.prototype);
+  }
+}

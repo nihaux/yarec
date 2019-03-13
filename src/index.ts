@@ -2,9 +2,9 @@ import 'cross-fetch/polyfill';
 import { getToken } from './getToken';
 import { refreshToken } from './refreshToken';
 import { encodeBodyPost } from './utils/encodeBodyPost';
-import { Link, Listing } from './types';
+import { Link, Listing, Comment } from './types';
 import { timeout } from './utils/timeout';
-import { BadOauthCredentialsError, RedditBackendError } from './errors';
+import { BadOauthCredentialsError, RedditBackendError, UnauthorizedError } from './errors';
 
 export enum SortLinksEnum {
   new = 'new',
@@ -14,6 +14,15 @@ export enum SortLinksEnum {
   top = 'top',
   controversial = 'controversial',
 }
+
+export type ListingQueryType = {
+  sort?: SortLinksEnum;
+  before?: string;
+  after?: string;
+  count?: number;
+  limit?: number;
+};
+
 interface RedditClientInterface {}
 
 type RedditClientOptions = {
@@ -143,6 +152,9 @@ export default class RedditClient implements RedditClientInterface {
 
     this.extractRateLimitFromHeaders(response.headers);
 
+    if (response.status === 403) {
+      throw new UnauthorizedError();
+    }
     if (response.status === 401 && retrying === 0) {
       await this.fetchAccessToken();
       return this.makeRequest(url, requestOptions, 1);
@@ -181,23 +193,13 @@ export default class RedditClient implements RedditClientInterface {
 
   public listSubredditLinks = async (
     subredditName: string,
-    {
-      sort,
-      before,
-      after,
-      count,
-      limit,
-    }: {
-      sort: SortLinksEnum;
-      before?: string;
-      after?: string;
-      count?: number;
-      limit?: number;
-    },
+    query?: ListingQueryType,
   ): Promise<Listing<Link>> => {
+    const { sort, ...rest } = (query || {}) as ListingQueryType;
+    const path = `/r/${subredditName}${sort ? `/${sort}` : ''}`;
     return this.get({
-      path: `/r/${subredditName}/${sort}`,
-      query: { before, after, count, limit },
+      path,
+      query: rest as Partial<ListingQueryType>,
     });
   };
 
@@ -210,5 +212,59 @@ export default class RedditClient implements RedditClientInterface {
 
   public getLinks = async (ids: string[]) => {
     return this.getInfo<Link>(ids);
+  };
+
+  public listUserSubmitted = async (
+    username: string,
+    query?: ListingQueryType,
+  ): Promise<Listing<Link>> => {
+    return this.get({ path: `/user/${username}/submitted`, query });
+  };
+
+  public listUserComments = async (
+    username: string,
+    query?: ListingQueryType,
+  ): Promise<Listing<Comment>> => {
+    return this.get({ path: `/user/${username}/comments`, query });
+  };
+
+  public listUserUpvoted = async (
+    username: string,
+    query?: ListingQueryType,
+  ): Promise<Listing<Link>> => {
+    return this.get({ path: `/user/${username}/upvoted`, query });
+  };
+
+  public listUserDownvoted = async (
+    username: string,
+    query?: ListingQueryType,
+  ): Promise<Listing<Link>> => {
+    return this.get({ path: `/user/${username}/downvoted`, query });
+  };
+  public listUserHidden = async (
+    username: string,
+    query?: ListingQueryType,
+  ): Promise<Listing<Link>> => {
+    return this.get({ path: `/user/${username}/hidden`, query });
+  };
+  public listUserSaved = async (
+    username: string,
+    query?: ListingQueryType,
+  ): Promise<Listing<Link>> => {
+    return this.get({ path: `/user/${username}/saved`, query });
+  };
+
+  public listUserGilded = async (
+    username: string,
+    query?: ListingQueryType,
+  ): Promise<Listing<Link>> => {
+    return this.get({ path: `/user/${username}/gilded`, query });
+  };
+
+  public listUserOverview = async (
+    username: string,
+    query?: ListingQueryType,
+  ): Promise<Listing<Link | Comment>> => {
+    return this.get({ path: `/user/${username}/overview`, query });
   };
 }
