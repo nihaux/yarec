@@ -38,7 +38,6 @@ describe('getAccessToken', () => {
       {
         method: 'POST',
         mode: 'cors',
-        credentials: 'include',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           Authorization: 'Basic dG90bzp0b3Rvc2VjcmV0',
@@ -65,7 +64,6 @@ describe('getAccessToken', () => {
       {
         method: 'POST',
         mode: 'cors',
-        credentials: 'include',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           ...getBasicAuthHeader({
@@ -96,7 +94,6 @@ describe('getAccessToken', () => {
       {
         method: 'POST',
         mode: 'cors',
-        credentials: 'include',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           ...getBasicAuthHeader({ client_id: params.client_id }),

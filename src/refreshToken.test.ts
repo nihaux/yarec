@@ -29,7 +29,6 @@ describe('refreshToken', () => {
       {
         method: 'POST',
         mode: 'cors',
-        credentials: 'include',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           ...getBasicAuthHeader({

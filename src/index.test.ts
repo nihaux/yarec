@@ -35,7 +35,6 @@ const getMockedGetCall = (path: string) => {
     {
       method: 'GET',
       mode: 'cors',
-      credentials: 'include',
       headers: {
         Authorization: `Bearer ${tokenResponse.access_token}`,
         'User-Agent': user_agent,
