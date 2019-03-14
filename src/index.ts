@@ -25,17 +25,16 @@ export type ListingQueryType = {
 
 interface RedditClientInterface {}
 
-type RedditClientOptions = {
+export type RedditClientOptions = {
   readonly maxRetry: number;
 };
 
-type RedditClientConstructorArgs = {
+export type RedditClientConstructorArgs = {
   readonly client_id: string;
   readonly redirect_uri: string;
   readonly user_agent: string;
   readonly client_secret?: string;
   readonly refresh_token?: string;
-  // mostly for debugging purpose
   readonly access_token?: string;
   readonly options?: RedditClientOptions;
 };
