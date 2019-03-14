@@ -101,7 +101,6 @@ export default class RedditClient implements RedditClientInterface {
 
   private getFetchOptions = () => ({
     mode: 'cors' as 'cors',
-    credentials: 'include' as 'include',
     headers: {
       Authorization: `Bearer ${this.access_token}`,
       'User-Agent': this.user_agent,

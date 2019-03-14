@@ -13,7 +13,6 @@ export const makePost = async ({ url, body, extraHeaders }: MakePostArgs) => {
   const response = await fetch(url, {
     method: 'POST',
     mode: 'cors',
-    credentials: 'include',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
       ...extraHeaders,
