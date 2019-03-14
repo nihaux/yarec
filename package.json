@@ -1,6 +1,6 @@
 {
   "name": "yarec",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "",
   "keywords": [],
   "main": "dist/index.umd.js",

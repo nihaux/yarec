@@ -1,4 +1,4 @@
-import * as EventEmitter from 'eventemitter3';
+const EventEmitter = require('eventemitter3');
 import { getToken } from './getToken';
 import { refreshToken } from './refreshToken';
 import { encodeBodyPost } from './utils/encodeBodyPost';
@@ -56,7 +56,7 @@ export default class RedditClient implements RedditClientInterface {
   private ratelimit_remaining?: number;
   private ratelimit_reset?: number;
   private inProgress: number;
-  private eventEmitter: EventEmitter;
+  private eventEmitter: any;
 
   constructor({
     client_id,
