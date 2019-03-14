@@ -1,3 +1,4 @@
+import * as EventEmitter from 'eventemitter3';
 import { getToken } from './getToken';
 import { refreshToken } from './refreshToken';
 import { encodeBodyPost } from './utils/encodeBodyPost';
@@ -41,6 +42,7 @@ type RedditClientConstructorArgs = {
 
 export const API_ENDPOINT = 'https://oauth.reddit.com';
 export const MIN_REMAINING_REQUEST_THRESHOLD = 5;
+export const TOKEN_EVENT = 'token';
 
 export default class RedditClient implements RedditClientInterface {
   private readonly client_id: string;
@@ -54,6 +56,7 @@ export default class RedditClient implements RedditClientInterface {
   private ratelimit_remaining?: number;
   private ratelimit_reset?: number;
   private inProgress: number;
+  private eventEmitter: EventEmitter;
 
   constructor({
     client_id,
@@ -74,6 +77,8 @@ export default class RedditClient implements RedditClientInterface {
       this.access_token = access_token;
     }
 
+    this.eventEmitter = new EventEmitter();
+
     this.maxRetry = (options && options.maxRetry) || 1;
     this.inProgress = 0;
     // this.access_token = '24628247-KdovbyetN3uXy4XwQvQFTGWTing';
@@ -88,15 +93,22 @@ export default class RedditClient implements RedditClientInterface {
         client_secret: this.client_secret,
       });
       this.access_token = tokenObject.access_token;
-      return;
+    } else {
+      const tokenObject = await getToken({
+        client_id: this.client_id,
+        client_secret: this.client_secret,
+        redirect_uri: this.redirect_uri,
+      });
+      this.access_token = tokenObject.access_token;
     }
+    this.eventEmitter.emit(TOKEN_EVENT, this.access_token);
+  };
 
-    const tokenObject = await getToken({
-      client_id: this.client_id,
-      client_secret: this.client_secret,
-      redirect_uri: this.redirect_uri,
-    });
-    this.access_token = tokenObject.access_token;
+  public onToken = (callback: (token: string) => void) => {
+    this.eventEmitter.on(TOKEN_EVENT, callback);
+  };
+  public offToken = (callback: (token: string) => void) => {
+    this.eventEmitter.off(TOKEN_EVENT, callback);
   };
 
   private getFetchOptions = () => ({

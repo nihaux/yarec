@@ -104,6 +104,77 @@ describe('RedditClient', () => {
       expect(fetch.mock.calls.length).toEqual(4);
       expect(refreshTokenSpy.mock.calls.length).toEqual(1);
     });
+    it('should not fetch a token if one is given at instanciation', async () => {
+      const response = { whateverfornow: 'toto' };
+      fetch.mockResponseOnce(JSON.stringify(response));
+
+      const r = new RedditClient({
+        client_id,
+        redirect_uri,
+        user_agent,
+        access_token: 'toto',
+      });
+      await r.listSubredditLinks('nosleep', { sort: SortLinksEnum.new });
+      expect(getTokenSpy.mock.calls.length).toEqual(0);
+    });
+    it('should dispatch a onToken event after getting a token (using getToken)', async () => {
+      const response = { whateverfornow: 'toto' };
+      fetch.mockResponse(JSON.stringify(response));
+
+      const r = new RedditClient({
+        client_id,
+        redirect_uri,
+        user_agent,
+      });
+
+      const spy = jest.fn();
+
+      r.onToken(spy);
+
+      await r.listSubredditLinks('nosleep', { sort: SortLinksEnum.new });
+
+      expect(spy).toHaveBeenCalledWith(tokenResponse.access_token);
+    });
+    it('should dispatch a onToken event after getting a token (using refreshToken)', async () => {
+      const response = { whateverfornow: 'toto' };
+      fetch.mockResponse(JSON.stringify(response));
+
+      const r = new RedditClient({
+        client_id,
+        redirect_uri,
+        user_agent,
+        refresh_token,
+      });
+
+      const spy = jest.fn();
+
+      r.onToken(spy);
+
+      await r.listSubredditLinks('nosleep', { sort: SortLinksEnum.new });
+
+      expect(spy).toHaveBeenCalledWith(tokenResponse.access_token);
+    });
+    it('should allow to unsubscribe of the token event', async () => {
+      const response = { whateverfornow: 'toto' };
+      fetch.mockResponse(JSON.stringify(response));
+
+      const r = new RedditClient({
+        client_id,
+        redirect_uri,
+        user_agent,
+        refresh_token,
+      });
+
+      const spy = jest.fn();
+
+      r.onToken(spy);
+
+      r.offToken(spy);
+
+      await r.listSubredditLinks('nosleep', { sort: SortLinksEnum.new });
+
+      expect(spy).not.toHaveBeenCalled();
+    });
   });
   describe('rate limiting', () => {
     it('should wait for the rate limit to reset if there is less than MIN_REMAINING_REQUEST_THRESHOLD requests allowed', async () => {
