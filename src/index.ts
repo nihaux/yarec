@@ -49,9 +49,9 @@ export default class RedditClient implements RedditClientInterface {
   private readonly user_agent: string;
   private readonly maxRetry: number;
   private readonly client_secret?: string;
-  private readonly refresh_token?: string;
-  // tslint:disable readonly-keyword
+
   private access_token?: string;
+  private refresh_token?: string;
   private ratelimit_remaining?: number;
   private ratelimit_reset?: number;
   private inProgress: number;
@@ -82,6 +82,17 @@ export default class RedditClient implements RedditClientInterface {
     this.inProgress = 0;
     // this.access_token = '24628247-KdovbyetN3uXy4XwQvQFTGWTing';
   }
+
+  public setTokens = ({
+    access_token,
+    refresh_token,
+  }: {
+    access_token?: string;
+    refresh_token?: string;
+  }) => {
+    this.refresh_token = refresh_token;
+    this.access_token = access_token;
+  };
 
   private fetchAccessToken = async () => {
     // @todo handle race condition
