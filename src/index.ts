@@ -2,9 +2,14 @@ const EventEmitter = require('eventemitter3');
 import { getToken } from './getToken';
 import { refreshToken } from './refreshToken';
 import { encodeBodyPost } from './utils/encodeBodyPost';
-import { Link, Listing, Comment, ErrorResponse } from './types';
+import { Link, Listing, Comment } from './types';
 import { timeout } from './utils/timeout';
-import { BadOauthCredentialsError, RedditBackendError, UnauthorizedError } from './errors';
+import {
+  BadOauthCredentialsError,
+  NotFoundError,
+  RedditBackendError,
+  UnauthorizedError,
+} from './errors';
 
 export enum SortLinksEnum {
   new = 'new',
@@ -172,8 +177,11 @@ export default class RedditClient implements RedditClientInterface {
 
     this.extractRateLimitFromHeaders(response.headers);
 
+    if (response.status === 404) {
+      throw new NotFoundError(url);
+    }
     if (response.status === 403) {
-      throw new UnauthorizedError();
+      throw new UnauthorizedError(url);
     }
     if (response.status === 401 && retrying === 0) {
       await this.fetchAccessToken();
@@ -237,54 +245,54 @@ export default class RedditClient implements RedditClientInterface {
   public listUserSubmitted = async (
     username: string,
     query?: ListingQueryType,
-  ): Promise<Listing<Link> | ErrorResponse> => {
+  ): Promise<Listing<Link>> => {
     return this.get({ path: `/user/${username}/submitted`, query });
   };
 
   public listUserComments = async (
     username: string,
     query?: ListingQueryType,
-  ): Promise<Listing<Comment> | ErrorResponse> => {
+  ): Promise<Listing<Comment>> => {
     return this.get({ path: `/user/${username}/comments`, query });
   };
 
   public listUserUpvoted = async (
     username: string,
     query?: ListingQueryType,
-  ): Promise<Listing<Link> | ErrorResponse> => {
+  ): Promise<Listing<Link>> => {
     return this.get({ path: `/user/${username}/upvoted`, query });
   };
 
   public listUserDownvoted = async (
     username: string,
     query?: ListingQueryType,
-  ): Promise<Listing<Link> | ErrorResponse> => {
+  ): Promise<Listing<Link>> => {
     return this.get({ path: `/user/${username}/downvoted`, query });
   };
   public listUserHidden = async (
     username: string,
     query?: ListingQueryType,
-  ): Promise<Listing<Link> | ErrorResponse> => {
+  ): Promise<Listing<Link>> => {
     return this.get({ path: `/user/${username}/hidden`, query });
   };
   public listUserSaved = async (
     username: string,
     query?: ListingQueryType,
-  ): Promise<Listing<Link> | ErrorResponse> => {
+  ): Promise<Listing<Link>> => {
     return this.get({ path: `/user/${username}/saved`, query });
   };
 
   public listUserGilded = async (
     username: string,
     query?: ListingQueryType,
-  ): Promise<Listing<Link> | ErrorResponse> => {
+  ): Promise<Listing<Link>> => {
     return this.get({ path: `/user/${username}/gilded`, query });
   };
 
   public listUserOverview = async (
     username: string,
     query?: ListingQueryType,
-  ): Promise<Listing<Link | Comment> | ErrorResponse> => {
+  ): Promise<Listing<Link | Comment>> => {
     return this.get({ path: `/user/${username}/overview`, query });
   };
 }

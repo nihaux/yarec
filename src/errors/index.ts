@@ -48,9 +48,17 @@ export class RedditIncompleteResponseError extends Error {
 }
 
 export class UnauthorizedError extends Error {
-  constructor() {
+  constructor(url: string) {
     /* istanbul ignore next line */
-    super(`You don't have sufficient permission to do this (Unauthorized 403)`);
+    super(`You don't have sufficient permission to do this (Unauthorized 403) - ${url}`);
     Object.setPrototypeOf(this, UnauthorizedError.prototype);
+  }
+}
+
+export class NotFoundError extends Error {
+  constructor(url: string) {
+    /* istanbul ignore next line */
+    super(`Resource Not Found (Not Found 404) - ${url}`);
+    Object.setPrototypeOf(this, NotFoundError.prototype);
   }
 }
