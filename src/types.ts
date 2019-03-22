@@ -9,6 +9,11 @@ export enum AuthorizationDurationEnum {
   permanent = 'permanent',
 }
 
+export type ErrorResponse = {
+  message: string;
+  error: number;
+};
+
 export enum ScopeEnum {
   account = 'account',
   creddits = 'creddits',
