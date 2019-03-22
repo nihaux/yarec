@@ -374,7 +374,7 @@ describe('RedditClient', () => {
       try {
         await r.listSubredditLinks('nosleep', { sort: SortLinksEnum.new });
       } catch (e) {
-        expect(e).toEqual(new UnauthorizedError());
+        expect(e).toEqual(new UnauthorizedError('https://oauth.reddit.com/r/nosleep/new?'));
       }
       expect(fetch.mock.calls.length).toEqual(1);
     });
