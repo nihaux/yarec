@@ -2,7 +2,7 @@ const EventEmitter = require('eventemitter3');
 import { getToken } from './getToken';
 import { refreshToken } from './refreshToken';
 import { encodeBodyPost } from './utils/encodeBodyPost';
-import { Link, Listing, Comment } from './types';
+import { Link, Listing, Comment, Thing } from './types';
 import { timeout } from './utils/timeout';
 import {
   BadOauthCredentialsError,
@@ -237,6 +237,38 @@ export default class RedditClient implements RedditClientInterface {
       query: { id: ids.join(',') },
     });
   };
+
+  public async *crawl<P extends [any, ListingQueryType], T extends Thing>(
+    apiCall: (...p: P) => Promise<Listing<T>>,
+    ...apiCallParams: P
+  ) {
+    const { before } = apiCallParams[1];
+
+    let [firstParam, listingQuery, ...rest] = apiCallParams;
+    let result;
+    do {
+      result = await apiCall(...([firstParam, listingQuery, ...rest] as P));
+      yield result;
+      if (before) {
+        const firstChild = result.data.children[0];
+        if (!firstChild) {
+          break;
+        }
+        listingQuery = {
+          ...listingQuery,
+          before: firstChild.data.name,
+        };
+      } else {
+        if (!result.data.after) {
+          break;
+        }
+        listingQuery = {
+          ...listingQuery,
+          after: result.data.after,
+        };
+      }
+    } while (result.data.children.length > 0);
+  }
 
   public getLinks = async (ids: string[]) => {
     return this.getInfo<Link>(ids);

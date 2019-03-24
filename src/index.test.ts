@@ -1,13 +1,18 @@
 import { GlobalWithFetchMock } from 'jest-fetch-mock';
 import RedditClient, {
-  SortLinksEnum,
   API_ENDPOINT,
   MIN_REMAINING_REQUEST_THRESHOLD,
+  SortLinksEnum,
 } from './index';
 import * as getTokenModule from './getToken';
 import * as refreshTokenModule from './refreshToken';
-import { ScopeEnum } from './types';
-import { BadOauthCredentialsError, RedditBackendError, UnauthorizedError } from './errors';
+import { KindEnum, Link, Listing, ScopeEnum, Thing } from './types';
+import {
+  BadOauthCredentialsError,
+  NotFoundError,
+  RedditBackendError,
+  UnauthorizedError,
+} from './errors';
 
 const fetch = (global as GlobalWithFetchMock).fetch;
 
@@ -29,18 +34,33 @@ getTokenSpy.mockResolvedValue(Promise.resolve(tokenResponse));
 const refreshTokenSpy = jest.spyOn(refreshTokenModule, 'refreshToken');
 refreshTokenSpy.mockResolvedValue(Promise.resolve(tokenResponse));
 
-const getMockedGetCall = (path: string) => {
+const getMockedGetCall = (path: string, accessToken?: string) => {
   return [
     `${API_ENDPOINT}${path}`,
     {
       method: 'GET',
       mode: 'cors',
       headers: {
-        Authorization: `Bearer ${tokenResponse.access_token}`,
+        Authorization: `Bearer ${accessToken || tokenResponse.access_token}`,
         'User-Agent': user_agent,
       },
     },
   ];
+};
+
+const getListingResponse = ({
+  before,
+  after,
+  children,
+}: {
+  before?: string;
+  after?: string;
+  children?: Thing[];
+}): Listing<Link> => {
+  return {
+    kind: KindEnum.Listing,
+    data: { before: before || null, after: after || null, children: children || [] },
+  };
 };
 
 describe('RedditClient', () => {
@@ -174,6 +194,22 @@ describe('RedditClient', () => {
       await r.listSubredditLinks('nosleep', { sort: SortLinksEnum.new });
 
       expect(spy).not.toHaveBeenCalled();
+    });
+    describe('setTokens', () => {
+      it('should not fetch a token and use the one given by setTokens', async () => {
+        const response = { whateverfornow: 'toto' };
+        fetch.mockResponseOnce(JSON.stringify(response));
+
+        const r = new RedditClient({
+          client_id,
+          redirect_uri,
+          user_agent,
+        });
+        r.setTokens({ access_token: 'toto_toto' });
+        await r.listSubredditLinks('nosleep', { sort: SortLinksEnum.new });
+        expect(getTokenSpy.mock.calls.length).toEqual(0);
+        expect(fetch.mock.calls[0]).toEqual(getMockedGetCall('/r/nosleep/new?', 'toto_toto'));
+      });
     });
   });
   describe('rate limiting', () => {
@@ -379,6 +415,25 @@ describe('RedditClient', () => {
       expect(fetch.mock.calls.length).toEqual(1);
     });
   });
+  describe('notfound error', () => {
+    it('should throw if reddit returns 404', async () => {
+      const response = { whateverfornow: 'toto' };
+      fetch.mockResponseOnce(JSON.stringify(response), { status: 404 });
+
+      const r = new RedditClient({
+        client_id,
+        redirect_uri,
+        user_agent,
+      });
+      expect.assertions(2); // to make sure we pass in catch
+      try {
+        await r.listSubredditLinks('nosleep', { sort: SortLinksEnum.new });
+      } catch (e) {
+        expect(e).toEqual(new NotFoundError('https://oauth.reddit.com/r/nosleep/new?'));
+      }
+      expect(fetch.mock.calls.length).toEqual(1);
+    });
+  });
   describe('listSubredditLinks', () => {
     it('should make a fetch call to the api', async () => {
       const response = { whateverfornow: 'toto' };
@@ -417,6 +472,98 @@ describe('RedditClient', () => {
 
       expect(fetch.mock.calls.length).toEqual(1);
       expect(fetch.mock.calls[0]).toEqual(expectedCall);
+    });
+  });
+
+  describe('crawling', () => {
+    describe('after', () => {
+      it('should crawl until no more', async () => {
+        const responses = [
+          getListingResponse({
+            after: 'toto1',
+            children: [{ id: 'toto', name: 't3_asdfasdf', kind: KindEnum.Link, data: {} }],
+          }),
+          getListingResponse({
+            children: [{ id: 'toto', name: 't3_asdfasdf', kind: KindEnum.Link, data: {} }],
+          }),
+        ];
+        fetch.mockResponses(
+          [JSON.stringify(responses[0]), { status: 200 }],
+          [JSON.stringify(responses[1]), { status: 200 }],
+        );
+
+        const r = new RedditClient({
+          client_id,
+          redirect_uri,
+          user_agent,
+        });
+
+        const crawler = r.crawl(r.listSubredditLinks, 'nosleep', { sort: SortLinksEnum.new });
+
+        let result = await crawler.next();
+        expect(result.value).toEqual(responses[0]);
+        result = await crawler.next();
+        expect(result.value).toEqual(responses[1]);
+        result = await crawler.next();
+        expect(result.done).toBeTruthy();
+        expect(getTokenSpy.mock.calls.length).toEqual(1);
+        expect(fetch.mock.calls.length).toEqual(2);
+        expect(fetch.mock.calls[0]).toEqual(getMockedGetCall(`/r/nosleep/new?`));
+        expect(fetch.mock.calls[1]).toEqual(getMockedGetCall(`/r/nosleep/new?after=toto1`));
+      });
+    });
+    describe('before', () => {
+      it('should crawl until no more', async () => {
+        const responses = [
+          getListingResponse({
+            children: [
+              { id: 'toto', name: 't3_titi2', kind: KindEnum.Link, data: { name: 't3_titi2' } },
+            ],
+          }),
+          getListingResponse({
+            children: [
+              { id: 'toto', kind: KindEnum.Link, name: 't3_toto3', data: { name: 't3_toto3' } },
+            ],
+          }),
+          getListingResponse({
+            children: [
+              { id: 'toto', kind: KindEnum.Link, name: 't3_toto4', data: { name: 't3_toto4' } },
+            ],
+          }),
+          getListingResponse({
+            children: [],
+          }),
+        ];
+        fetch.mockResponses(
+          [JSON.stringify(responses[0]), { status: 200 }],
+          [JSON.stringify(responses[1]), { status: 200 }],
+          [JSON.stringify(responses[2]), { status: 200 }],
+          [JSON.stringify(responses[3]), { status: 200 }],
+        );
+
+        const r = new RedditClient({
+          client_id,
+          redirect_uri,
+          user_agent,
+        });
+
+        const crawler = r.crawl(r.listSubredditLinks, 'nosleep', {
+          sort: SortLinksEnum.new,
+          before: 't3_sth',
+        });
+
+        let cpt = 0;
+        for await (let result of crawler) {
+          expect(result).toEqual(responses[cpt]);
+          cpt++;
+        }
+        expect(getTokenSpy.mock.calls.length).toEqual(1);
+        expect(fetch.mock.calls.length).toEqual(4);
+        expect(fetch.mock.calls[0]).toEqual(getMockedGetCall(`/r/nosleep/new?before=t3_sth`));
+        expect(fetch.mock.calls[1]).toEqual(getMockedGetCall(`/r/nosleep/new?before=t3_titi2`));
+        expect(fetch.mock.calls[2]).toEqual(getMockedGetCall(`/r/nosleep/new?before=t3_toto3`));
+        expect(fetch.mock.calls[3]).toEqual(getMockedGetCall(`/r/nosleep/new?before=t3_toto4`));
+      });
     });
   });
   describe('user history listings', () => {
