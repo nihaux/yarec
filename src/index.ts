@@ -231,6 +231,16 @@ export default class RedditClient implements RedditClientInterface {
     });
   };
 
+  public listLinkComments = async (
+    subredditName: string,
+    linkId: string,
+  ): Promise<[Listing<Link>, Listing<Comment>]> => {
+    const path = `/r/${subredditName}/comments/${linkId}`;
+    return this.get({
+      path,
+    });
+  };
+
   public getInfo = async <T>(ids: string[]): Promise<Listing<T>> => {
     return this.get({
       path: `/api/info`,
