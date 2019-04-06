@@ -132,6 +132,7 @@ export interface Comment
   banned_by: string | null;
   body: string;
   body_html: string;
+  depth: number;
   edited: boolean | number;
   gilded: number;
   link_author?: string;
@@ -140,7 +141,7 @@ export interface Comment
   link_url?: string;
   num_reports: number | null;
   parent_id: string;
-  replies: Listing<Comment>;
+  replies: Listing<Comment> | '';
   score_hidden: boolean;
 }
 
