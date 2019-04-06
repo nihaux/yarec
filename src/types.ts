@@ -139,7 +139,7 @@ export interface Comment
   link_url?: string;
   num_reports: number | null;
   parent_id: string;
-  replies: Comment[];
+  replies: Listing<Comment>;
   score_hidden: boolean;
 }
 
