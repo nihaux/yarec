@@ -126,7 +126,8 @@ export interface Comment
     Saveable,
     InSubreddit,
     Gildable,
-    Banable {
+    Banable,
+    WithScore {
   approved_by: string | null;
   banned_by: string | null;
   body: string;

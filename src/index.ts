@@ -338,3 +338,5 @@ export default class RedditClient implements RedditClientInterface {
     return this.get({ path: `/user/${username}/overview`, query });
   };
 }
+
+export * from './types';
