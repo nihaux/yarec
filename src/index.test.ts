@@ -474,7 +474,6 @@ describe('RedditClient', () => {
       expect(fetch.mock.calls[0]).toEqual(expectedCall);
     });
   });
-
   describe('crawling', () => {
     describe('after', () => {
       it('should crawl until no more', async () => {
@@ -564,6 +563,27 @@ describe('RedditClient', () => {
         expect(fetch.mock.calls[2]).toEqual(getMockedGetCall(`/r/nosleep/new?before=t3_toto3`));
         expect(fetch.mock.calls[3]).toEqual(getMockedGetCall(`/r/nosleep/new?before=t3_toto4`));
       });
+    });
+  });
+  describe('list link comments', () => {
+    it('should make a fetch call to the api', async () => {
+      const response = { whateverfornow: 'toto' };
+      fetch.mockResponseOnce(JSON.stringify(response));
+
+      const r = new RedditClient({
+        client_id,
+        redirect_uri,
+        user_agent,
+      });
+
+      const linkid = 'b9vicg';
+      const subredditName = 'nosleep';
+      await r.listLinkComments(subredditName, linkid);
+
+      const expectedCall = getMockedGetCall(`/r/${subredditName}/comments/${linkid}`);
+
+      expect(fetch.mock.calls.length).toEqual(1);
+      expect(fetch.mock.calls[0]).toEqual(expectedCall);
     });
   });
   describe('user history listings', () => {
