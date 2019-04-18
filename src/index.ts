@@ -219,6 +219,10 @@ export default class RedditClient implements RedditClientInterface {
     return response.json();
   };
 
+  public me = async (): Promise<any> => {
+    return this.get({ path: '/api/v1/me' });
+  };
+
   public listSubredditLinks = async (
     subredditName: string,
     query?: ListingQueryType,
