@@ -2,7 +2,7 @@ const EventEmitter = require('eventemitter3');
 import { getToken } from './getToken';
 import { refreshToken } from './refreshToken';
 import { encodeBodyPost } from './utils/encodeBodyPost';
-import { Link, Listing, Comment, Thing } from './types';
+import { Link, Listing, Comment, Thing, Me } from './types';
 import { timeout } from './utils/timeout';
 import {
   BadOauthCredentialsError,
@@ -219,7 +219,7 @@ export default class RedditClient implements RedditClientInterface {
     return response.json();
   };
 
-  public me = async (): Promise<any> => {
+  public me = async (): Promise<Me> => {
     return this.get({ path: '/api/v1/me' });
   };
 

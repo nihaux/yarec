@@ -220,3 +220,54 @@ export interface Link
   whitelist_status: string;
   wls: number;
 }
+
+export interface Me {
+  coins: number;
+  comment_karma: number;
+  created: number;
+  created_utc: number;
+  features: any;
+  force_password_reset: boolean;
+  gold_creddits: number;
+  gold_expiration: number | null;
+  has_android_subscription: boolean;
+  has_external_account: boolean;
+  has_gold_subscription: boolean;
+  has_ios_subscription: boolean;
+  has_paypal_subscription: boolean;
+  has_stripe_subscription: boolean;
+  has_subscribed: boolean;
+  has_subscribed_to_premium: boolean;
+  has_verified_email: boolean;
+  has_visited_new_profile: boolean;
+  hide_from_robots: boolean;
+  icon_img: string;
+  id: string;
+  in_beta: boolean;
+  in_redesign_beta: boolean;
+  inbox_count: number;
+  is_employee: boolean;
+  is_gold: boolean;
+  is_mod: boolean;
+  is_sponsor: boolean;
+  is_suspended: boolean;
+  link_karma: number;
+  name: string;
+  num_friends: number;
+  oauth_client_id: string;
+  over_18: boolean;
+  pref_autoplay: boolean;
+  pref_clickgadget: number;
+  pref_geopopular: string;
+  pref_nightmode: boolean;
+  pref_no_profanity: boolean;
+  pref_show_snoovatar: boolean;
+  pref_show_trending: boolean;
+  pref_show_twitter: boolean;
+  pref_top_karma_subreddits: boolean;
+  pref_video_autoplay: boolean;
+  seen_layout_switch: boolean;
+  seen_premium_adblock_modal: boolean;
+  seen_redesign_modal: boolean;
+  seen_subreddit_chat_ftux: boolean;
+}
