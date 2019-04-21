@@ -134,10 +134,11 @@ export default class RedditClient implements RedditClientInterface {
 
   private getFetchOptions = () => ({
     mode: 'cors' as 'cors',
-    headers: {
-      Authorization: `Bearer ${this.access_token}`,
-      'User-Agent': this.user_agent,
-    },
+  });
+
+  private getFetchHeaders = () => ({
+    Authorization: `Bearer ${this.access_token}`,
+    'User-Agent': this.user_agent,
   });
 
   private extractRateLimitFromHeaders = (headers: Headers) => {
@@ -178,6 +179,10 @@ export default class RedditClient implements RedditClientInterface {
     const response = await fetch(url, {
       ...this.getFetchOptions(),
       ...requestOptions,
+      headers: {
+        ...this.getFetchHeaders(),
+        ...(requestOptions.headers ? requestOptions.headers : {}),
+      },
     });
     this.inProgress--;
 
@@ -235,7 +240,10 @@ export default class RedditClient implements RedditClientInterface {
     const url = `${API_ENDPOINT}${path}`;
     const response = await this.makeRequest(url, {
       method: 'POST',
-      body: JSON.stringify(body),
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: encodeBodyPost(body),
     });
     return response.json();
   };
