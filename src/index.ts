@@ -29,9 +29,9 @@ export type ListingQueryType = {
 };
 
 export enum VoteDirectionEnum {
-  UP = 1,
-  DOWN = -1,
-  UNDO = 0,
+  UP = '1',
+  DOWN = '-1',
+  UNDO = '0',
 }
 
 interface RedditClientInterface {}
