@@ -28,6 +28,12 @@ export type ListingQueryType = {
   limit?: number;
 };
 
+export enum VoteDirectionEnum {
+  UP = 1,
+  DOWN = -1,
+  UNDO = 0,
+}
+
 interface RedditClientInterface {}
 
 export type RedditClientOptions = {
@@ -219,8 +225,36 @@ export default class RedditClient implements RedditClientInterface {
     return response.json();
   };
 
+  private post = async ({
+    path,
+    body,
+  }: {
+    path: string;
+    body: Record<string, string | number>;
+  }) => {
+    const url = `${API_ENDPOINT}${path}`;
+    const response = await this.makeRequest(url, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+    return response.json();
+  };
+
   public me = async (): Promise<Me> => {
     return this.get({ path: '/api/v1/me' });
+  };
+
+  public vote = async (id: string, dir: VoteDirectionEnum) => {
+    const path = `/api/vote`;
+    const response = await this.post({
+      path,
+      body: {
+        id,
+        dir,
+        rank: 2, // no clue what this is for
+      },
+    });
+    return response.json();
   };
 
   public listSubredditLinks = async (
